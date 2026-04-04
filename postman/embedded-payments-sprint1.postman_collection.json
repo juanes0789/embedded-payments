@@ -1,14 +1,14 @@
 {
   "info": {
     "_postman_id": "f2f20eb2-2b45-4f40-9670-a5b0d7d9ff12",
-    "name": "Embedded Payments - Sprint 1",
-    "description": "Coleccion para interactuar con el backend sin frontend. Incluye HU 1.1 y flujo basico de pagos.",
+    "name": "Embedded Payments - Demo Backend Actual",
+    "description": "Coleccion alineada con el backend actual (Spring Boot). Flujo demo real: merchant -> token -> payment intent -> transaction -> refund.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:8080"
+      "value": "http://localhost:8085"
     },
     {
       "key": "merchantName",
@@ -16,40 +16,43 @@
     },
     {
       "key": "merchantEmail",
-      "value": "zara.demo+1@test.com"
+      "value": "zara.demo@test.com"
+    },
+    {
+      "key": "amount",
+      "value": "10000.00"
+    },
+    {
+      "key": "currency",
+      "value": "USD"
+    },
+    {
+      "key": "refundAmount",
+      "value": "5000.00"
+    },
+    {
+      "key": "refundReason",
+      "value": "customer request"
     }
   ],
   "item": [
     {
-      "name": "HU 1.1 - Registro de comercios",
+      "name": "01 - Registro de comercio",
       "item": [
         {
           "name": "Registro exitoso (self registration)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"{{merchantName}}\",\n  \"email\": \"{{merchantEmail}}\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/merchants",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "merchants"
-              ]
-            }
-          },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var suffix = Date.now();",
+                  "pm.environment.set('merchantName', 'Zara Demo ' + suffix);",
+                  "pm.environment.set('merchantEmail', 'zara.demo+' + suffix + '@test.com');"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -57,15 +60,14 @@
                 "exec": [
                   "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
                   "var body = pm.response.json();",
+                  "pm.test('Retorna id', function () { pm.expect(body.id).to.be.a('string').and.not.empty; });",
                   "pm.test('Estado inicial INACTIVE', function () { pm.expect(body.status).to.eql('INACTIVE'); });",
-                  "if (body.id) { pm.collectionVariables.set('merchantId', body.id); }"
+                  "pm.environment.set('merchantId', body.id);",
+                  "pm.collectionVariables.set('merchantId', body.id);"
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Registro duplicado (409)",
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -89,7 +91,10 @@
                 "merchants"
               ]
             }
-          },
+          }
+        },
+        {
+          "name": "Registro duplicado (409)",
           "event": [
             {
               "listen": "test",
@@ -98,14 +103,52 @@
                 "exec": [
                   "pm.test('Status 409', function () { pm.response.to.have.status(409); });",
                   "var body = pm.response.json();",
-                  "pm.test('Error de duplicado', function () { pm.expect(body.errorCode).to.eql('MERCHANT_ALREADY_EXISTS'); });"
+                  "pm.test('Error code MERCHANT_ALREADY_EXISTS', function () { pm.expect(body.errorCode).to.eql('MERCHANT_ALREADY_EXISTS'); });",
+                  "pm.test('Formato de error con traceId', function () { pm.expect(body.traceId).to.be.a('string').and.not.empty; });"
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{merchantName}}\",\n  \"email\": \"{{merchantEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchants"
+              ]
+            }
+          }
         },
         {
           "name": "Registro invalido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', function () { pm.response.to.have.status(400); });",
+                  "var body = pm.response.json();",
+                  "pm.test('Error code VALIDATION_ERROR', function () { pm.expect(body.errorCode).to.eql('VALIDATION_ERROR'); });"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -129,28 +172,31 @@
                 "merchants"
               ]
             }
-          },
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Auth",
+      "item": [
+        {
+          "name": "Generar token de comercio",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
                   "var body = pm.response.json();",
-                  "pm.test('Error de validacion', function () { pm.expect(body.errorCode).to.eql('VALIDATION_ERROR'); });"
+                  "pm.test('Retorna token', function () { pm.expect(body.token).to.be.a('string').and.not.empty; });",
+                  "pm.test('Retorna expiresAt', function () { pm.expect(body.expiresAt).to.be.a('string').and.not.empty; });",
+                  "pm.environment.set('jwtToken', body.token);",
+                  "pm.collectionVariables.set('jwtToken', body.token);"
                 ]
               }
             }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Auth",
-      "item": [
-        {
-          "name": "Generar token de comercio",
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -175,28 +221,72 @@
                 "token"
               ]
             }
-          },
+          }
+        },
+        {
+          "name": "Generar token invalido (400)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Status 400', function () { pm.response.to.have.status(400); });",
                   "var body = pm.response.json();",
-                  "if (body.token) { pm.collectionVariables.set('jwtToken', body.token); }"
+                  "pm.test('Error code VALIDATION_ERROR', function () { pm.expect(body.errorCode).to.eql('VALIDATION_ERROR'); });"
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchantId\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "token"
+              ]
+            }
+          }
         }
       ]
     },
     {
-      "name": "Payments Flow (opcional demo)",
+      "name": "03 - Payments",
       "item": [
         {
           "name": "Crear payment intent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "pm.test('Estado CREATED', function () { pm.expect(body.status).to.eql('CREATED'); });",
+                  "pm.test('Moneda normalizada', function () { pm.expect(body.currency).to.eql('USD'); });",
+                  "pm.environment.set('paymentIntentId', body.id);",
+                  "pm.collectionVariables.set('paymentIntentId', body.id);"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -206,13 +296,12 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{jwtToken}}",
-                "disabled": true
+                "value": "Bearer {{jwtToken}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"merchantId\": \"{{merchantId}}\",\n  \"amount\": 10000.00,\n  \"currency\": \"USD\"\n}"
+              "raw": "{\n  \"merchantId\": \"{{merchantId}}\",\n  \"amount\": {{amount}},\n  \"currency\": \"{{currency}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/payments/intents",
@@ -226,23 +315,23 @@
                 "intents"
               ]
             }
-          },
+          }
+        },
+        {
+          "name": "Crear payment intent invalido (400)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Status 400', function () { pm.response.to.have.status(400); });",
                   "var body = pm.response.json();",
-                  "if (body.id) { pm.collectionVariables.set('paymentIntentId', body.id); }"
+                  "pm.test('Error code VALIDATION_ERROR', function () { pm.expect(body.errorCode).to.eql('VALIDATION_ERROR'); });"
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Crear transaccion",
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -252,13 +341,64 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{jwtToken}}",
-                "disabled": true
+                "value": "Bearer {{jwtToken}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"paymentIntentId\": \"{{paymentIntentId}}\",\n  \"amount\": 10000.00\n}"
+              "raw": "{\n  \"merchantId\": \"{{merchantId}}\",\n  \"amount\": 0,\n  \"currency\": \"US\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/intents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "intents"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Transactions",
+      "item": [
+        {
+          "name": "Crear transaccion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "pm.test('Estado SUCCEEDED', function () { pm.expect(body.status).to.eql('SUCCEEDED'); });",
+                  "pm.environment.set('transactionId', body.id);",
+                  "pm.collectionVariables.set('transactionId', body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentIntentId\": \"{{paymentIntentId}}\",\n  \"amount\": {{amount}}\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/transactions",
@@ -271,7 +411,15 @@
                 "transactions"
               ]
             }
-          },
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Refunds",
+      "item": [
+        {
+          "name": "Crear refund",
           "event": [
             {
               "listen": "test",
@@ -280,14 +428,13 @@
                 "exec": [
                   "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
                   "var body = pm.response.json();",
-                  "if (body.id) { pm.collectionVariables.set('transactionId', body.id); }"
+                  "pm.test('Estado PENDING', function () { pm.expect(body.status).to.eql('PENDING'); });",
+                  "pm.environment.set('refundId', body.id);",
+                  "pm.collectionVariables.set('refundId', body.id);"
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Crear refund",
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -297,13 +444,12 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{jwtToken}}",
-                "disabled": true
+                "value": "Bearer {{jwtToken}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"transactionId\": \"{{transactionId}}\",\n  \"amount\": 5000.00,\n  \"reason\": \"customer request\"\n}"
+              "raw": "{\n  \"transactionId\": \"{{transactionId}}\",\n  \"amount\": {{refundAmount}},\n  \"reason\": \"{{refundReason}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/refunds",
@@ -316,18 +462,52 @@
                 "refunds"
               ]
             }
-          },
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Webhooks (opcional)",
+      "item": [
+        {
+          "name": "Webhook de prueba",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });"
+                  "pm.test('Status 202', function () { pm.response.to.have.status(202); });",
+                  "var body = pm.response.json();",
+                  "pm.test('Webhook recibido', function () { pm.expect(body.status).to.eql('received'); });"
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"payment.succeeded\",\n  \"paymentIntentId\": \"{{paymentIntentId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/webhooks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "webhooks"
+              ]
+            }
+          }
         }
       ]
     }
