@@ -1,6 +1,5 @@
 package com.paymentplatform.embeddedpayments.payment.domain.entity;
 
-import com.paymentplatform.embeddedpayments.shared.audit.AuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -9,8 +8,8 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "payment_intent")
-public class PaymentIntent extends AuditableEntity {
+@Table(name = "payment_intents")
+public class PaymentIntent {
 
     @Id
     private UUID id;

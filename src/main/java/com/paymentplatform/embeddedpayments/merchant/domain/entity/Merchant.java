@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 import java.util.UUID;
 
 @Entity
-@Table(name = "merchant")
+@Table(name = "merchants")
 public class Merchant extends AuditableEntity {
 
     @Id
@@ -21,16 +21,16 @@ public class Merchant extends AuditableEntity {
     private String email;
 
     @Column(nullable = false)
-    private boolean active;
+    private String status;
 
     protected Merchant() {
     }
 
-    public Merchant(UUID id, String name, String email, boolean active) {
+    public Merchant(UUID id, String name, String email, String status) {
         this.id = id;
         this.name = name;
         this.email = email;
-        this.active = active;
+        this.status = status;
     }
 
     public UUID getId() {
@@ -45,8 +45,8 @@ public class Merchant extends AuditableEntity {
         return email;
     }
 
-    public boolean isActive() {
-        return active;
+    public String getStatus() {
+        return status;
     }
 }
 

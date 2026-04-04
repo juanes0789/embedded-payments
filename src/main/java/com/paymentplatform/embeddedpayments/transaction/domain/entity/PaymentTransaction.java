@@ -1,6 +1,5 @@
 package com.paymentplatform.embeddedpayments.transaction.domain.entity;
 
-import com.paymentplatform.embeddedpayments.shared.audit.AuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -10,8 +9,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "payment_transaction")
-public class PaymentTransaction extends AuditableEntity {
+@Table(name = "transactions")
+public class PaymentTransaction {
 
     @Id
     private UUID id;
@@ -26,17 +25,17 @@ public class PaymentTransaction extends AuditableEntity {
     private String status;
 
     @Column(nullable = false)
-    private Instant processedAt;
+    private Instant createdAt;
 
     protected PaymentTransaction() {
     }
 
-    public PaymentTransaction(UUID id, UUID paymentIntentId, BigDecimal amount, String status, Instant processedAt) {
+    public PaymentTransaction(UUID id, UUID paymentIntentId, BigDecimal amount, String status, Instant createdAt) {
         this.id = id;
         this.paymentIntentId = paymentIntentId;
         this.amount = amount;
         this.status = status;
-        this.processedAt = processedAt;
+        this.createdAt = createdAt;
     }
 
     public UUID getId() {
@@ -55,8 +54,8 @@ public class PaymentTransaction extends AuditableEntity {
         return status;
     }
 
-    public Instant getProcessedAt() {
-        return processedAt;
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 }
 

@@ -1,6 +1,5 @@
 package com.paymentplatform.embeddedpayments.refund.domain.entity;
 
-import com.paymentplatform.embeddedpayments.shared.audit.AuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -9,8 +8,8 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "refund")
-public class Refund extends AuditableEntity {
+@Table(name = "refunds")
+public class Refund {
 
     @Id
     private UUID id;

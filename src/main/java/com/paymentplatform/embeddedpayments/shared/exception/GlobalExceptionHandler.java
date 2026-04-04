@@ -1,7 +1,9 @@
 package com.paymentplatform.embeddedpayments.shared.exception;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,31 +15,39 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DomainException.class)
     public ResponseEntity<Map<String, Object>> handleDomainException(DomainException ex) {
-        return ResponseEntity.badRequest().body(errorBody(HttpStatus.BAD_REQUEST, ex.getMessage()));
+        return ResponseEntity.status(ex.getStatus())
+                .body(errorBody(ex.getStatus(), ex.getErrorCode(), ex.getMessage(), ex.getDetails()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationException(MethodArgumentNotValidException ex) {
-        String message = ex.getBindingResult().getFieldErrors().stream()
-                .findFirst()
+        List<String> details = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .orElse("Validation error");
+                .toList();
 
-        return ResponseEntity.badRequest().body(errorBody(HttpStatus.BAD_REQUEST, message));
+        return ResponseEntity.badRequest()
+                .body(errorBody(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Validation error", details));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleUnhandledException(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(errorBody(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected server error"));
+                .body(errorBody(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "INTERNAL_SERVER_ERROR",
+                        "Unexpected server error",
+                        List.of()
+                ));
     }
 
-    private Map<String, Object> errorBody(HttpStatus status, String message) {
+    private Map<String, Object> errorBody(HttpStatus status, String errorCode, String message, List<String> details) {
         return Map.of(
                 "timestamp", Instant.now(),
                 "status", status.value(),
-                "error", status.getReasonPhrase(),
-                "message", message
+                "errorCode", errorCode,
+                "message", message,
+                "details", details,
+                "traceId", UUID.randomUUID().toString()
         );
     }
 }

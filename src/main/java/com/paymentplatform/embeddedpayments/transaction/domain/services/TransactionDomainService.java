@@ -18,7 +18,7 @@ public class TransactionDomainService {
             throw new DomainException("amount must be greater than zero");
         }
 
-        return new PaymentTransaction(UUID.randomUUID(), paymentIntentId, amount, "APPROVED", Instant.now());
+        return new PaymentTransaction(UUID.randomUUID(), paymentIntentId, amount, "SUCCEEDED", Instant.now());
     }
 }
 

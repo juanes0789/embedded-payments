@@ -34,7 +34,7 @@ public class TransactionController {
                         transaction.getPaymentIntentId(),
                         transaction.getAmount(),
                         transaction.getStatus(),
-                        transaction.getProcessedAt()
+                        transaction.getCreatedAt()
                 ));
     }
 
@@ -42,7 +42,7 @@ public class TransactionController {
                                            @NotNull @DecimalMin(value = "0.01") BigDecimal amount) {
     }
 
-    public record TransactionResponse(UUID id, UUID paymentIntentId, BigDecimal amount, String status, Instant processedAt) {
+    public record TransactionResponse(UUID id, UUID paymentIntentId, BigDecimal amount, String status, Instant createdAt) {
     }
 }
 

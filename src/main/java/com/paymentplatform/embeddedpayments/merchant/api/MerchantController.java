@@ -27,13 +27,18 @@ public class MerchantController {
     public ResponseEntity<MerchantResponse> register(@Valid @RequestBody RegisterMerchantRequest request) {
         Merchant merchant = registerMerchantUseCase.execute(request.name(), request.email());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new MerchantResponse(merchant.getId(), merchant.getName(), merchant.getEmail(), merchant.isActive()));
+                .body(new MerchantResponse(
+                        merchant.getId(),
+                        merchant.getName(),
+                        merchant.getEmail(),
+                        merchant.getStatus()
+                ));
     }
 
-    public record RegisterMerchantRequest(@NotBlank String name, @Email String email) {
+    public record RegisterMerchantRequest(@NotBlank String name, @NotBlank @Email String email) {
     }
 
-    public record MerchantResponse(UUID id, String name, String email, boolean active) {
+    public record MerchantResponse(UUID id, String name, String email, String status) {
     }
 }
 
