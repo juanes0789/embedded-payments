@@ -50,6 +50,35 @@ Requirements:
 ./mvnw spring-boot:run
 ```
 
+## Deploy en Render
+
+Este proyecto ya queda preparado para Render con:
+
+- `server.port=${PORT:8085}` para respetar el puerto inyectado por la plataforma.
+- `render.yaml` con build y start command.
+- El build de Render recalcula `JAVA_HOME` desde `javac` para evitar el error del Maven Wrapper.
+
+Variables de entorno requeridas en Render:
+
+- `SPRING_DATASOURCE_URL`
+- `SPRING_DATASOURCE_USERNAME`
+- `SPRING_DATASOURCE_PASSWORD`
+- `JWT_SECRET`
+- `SPRING_JPA_HIBERNATE_DDL_AUTO=none`
+
+Comandos usados por Render:
+
+```bash
+./mvnw clean package -DskipTests
+java -jar target/embedded-payments-0.0.1-SNAPSHOT.jar
+```
+
+Notas:
+
+- La base de datos puede ser Render Postgres o Neon.
+- Antes de la demo, hay que ejecutar `db/001_create_schema.sql` en la base seleccionada.
+- El endpoint de salud y Swagger pueden usarse para validar el deploy.
+
 ## Tests
 
 ```bash
