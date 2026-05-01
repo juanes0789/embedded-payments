@@ -27,14 +27,18 @@ public class SecurityConfig {
                         
                         // Auth (público)
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("POST", "/api/v1/merchants").permitAll()
+                        .requestMatchers("/api/v1/merchants").permitAll()
                         
                         // Merchants - Requieren autenticación
-                        .requestMatchers("PUT", "/api/v1/merchants/{id}/contact").authenticated()
-                        .requestMatchers("PUT", "/api/v1/merchants/{id}/bank-account").authenticated()
-                        .requestMatchers("PATCH", "/api/v1/merchants/{id}/activate").hasRole("ADMIN")
-                        .requestMatchers("PATCH", "/api/v1/merchants/{id}/deactivate").hasRole("ADMIN")
-                        .requestMatchers("GET", "/api/v1/merchants/{id}").authenticated()
+                        .requestMatchers("/api/v1/merchants/*/contact").authenticated()
+                        .requestMatchers("/api/v1/merchants/*/bank-account").authenticated()
+                        .requestMatchers("/api/v1/merchants/*/activate").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/merchants/*/deactivate").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/merchants/*").authenticated()
+                        
+                        // Transactions
+                        .requestMatchers("/api/v1/transactions/**").authenticated()
+                        .requestMatchers("/api/v1/refunds/**").authenticated()
                         
                         // Otros
                         .anyRequest().authenticated()
@@ -48,4 +52,3 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
-
