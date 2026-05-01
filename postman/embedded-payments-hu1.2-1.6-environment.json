@@ -1,0 +1,76 @@
+{
+  "id": "embedded-payments-hu1.2-1.6-env",
+  "name": "Embedded Payments - HU 1.2-1.6 Environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "enabled": true,
+      "type": "string"
+    },
+    {
+      "key": "merchantId",
+      "value": "",
+      "enabled": true,
+      "type": "string"
+    },
+    {
+      "key": "merchantEmail",
+      "value": "tienda.tech@example.com",
+      "enabled": true,
+      "type": "string"
+    },
+    {
+      "key": "merchantName",
+      "value": "Tienda Tech S.L.",
+      "enabled": true,
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "enabled": true,
+      "type": "string"
+    },
+    {
+      "key": "merchantToken",
+      "value": "",
+      "enabled": true,
+      "type": "string"
+    },
+    {
+      "key": "contactName",
+      "value": "Juan Mosquera García",
+      "enabled": true,
+      "type": "string"
+    },
+    {
+      "key": "contactEmail",
+      "value": "juan.mosquera@tiendatech.es",
+      "enabled": true,
+      "type": "string"
+    },
+    {
+      "key": "iban",
+      "value": "ES9121000418450200051332",
+      "enabled": true,
+      "type": "string"
+    },
+    {
+      "key": "routingNumber",
+      "value": "021000021",
+      "enabled": true,
+      "type": "string"
+    },
+    {
+      "key": "accountHolder",
+      "value": "Tienda Tech S.L.",
+      "enabled": true,
+      "type": "string"
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2026-04-30T10:30:00.000Z",
+  "_postman_exported_using": "Postman/11.0"
+}
+

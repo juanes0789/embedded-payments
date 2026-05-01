@@ -1,0 +1,837 @@
+{
+  "info": {
+    "_postman_id": "embedded-payments-hu1.2-1.6-001",
+    "name": "Embedded Payments - HU 1.2 a 1.6 (Sprint 1)",
+    "description": "Colección completa para testing de HU 1.2-1.6: Gestión avanzada de comercios con auditoría, encriptación y enmascaramiento de datos",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "merchantId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "merchantEmail",
+      "value": "tienda.tech@example.com",
+      "type": "string"
+    },
+    {
+      "key": "merchantName",
+      "value": "Tienda Tech S.L.",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "merchantToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "contactName",
+      "value": "Juan Mosquera García",
+      "type": "string"
+    },
+    {
+      "key": "contactEmail",
+      "value": "juan.mosquera@tiendatech.es",
+      "type": "string"
+    },
+    {
+      "key": "iban",
+      "value": "ES9121000418450200051332",
+      "type": "string"
+    },
+    {
+      "key": "routingNumber",
+      "value": "021000021",
+      "type": "string"
+    },
+    {
+      "key": "accountHolder",
+      "value": "Tienda Tech S.L.",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. SETUP - Registrar Comercio (HU 1.1)",
+      "item": [
+        {
+          "name": "1.1 POST - Registrar nuevo comercio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('merchantId', jsonData.id);",
+                  "pm.test('Status code es 201', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Respuesta tiene id de comercio', function() {",
+                  "    pm.expect(jsonData.id).to.exist;",
+                  "});",
+                  "pm.test('Estado inicial es INACTIVE', function() {",
+                  "    pm.expect(jsonData.status).to.equal('INACTIVE');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{merchantName}}\",\n  \"email\": \"{{merchantEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants"]
+            },
+            "description": "Registra un nuevo comercio. Este es el primer paso antes de cualquier otra operación."
+          }
+        }
+      ]
+    },
+    {
+      "name": "HU 1.2 - Actualizar Información de Contacto",
+      "item": [
+        {
+          "name": "1.2.1 PUT - Actualizar contacto (exitoso)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Status code es 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta contiene contactName', function() {",
+                  "    pm.expect(jsonData.contact_name).to.exist;",
+                  "});",
+                  "pm.test('Mensaje de éxito presente', function() {",
+                  "    pm.expect(jsonData.message).to.include('updated successfully');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{merchantToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contact_name\": \"{{contactName}}\",\n  \"contact_email\": \"{{contactEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/{{merchantId}}/contact",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "{{merchantId}}", "contact"]
+            },
+            "description": "Actualiza la información de contacto del comercio. Requiere JWT válido."
+          }
+        },
+        {
+          "name": "1.2.2 PUT - Email inválido (validación)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('Error code es VALIDATION_ERROR', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error_code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{merchantToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contact_name\": \"Juan\",\n  \"contact_email\": \"email-invalido\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/{{merchantId}}/contact",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "{{merchantId}}", "contact"]
+            },
+            "description": "Intenta actualizar con email en formato inválido. Debe retornar 400."
+          }
+        },
+        {
+          "name": "1.2.3 PUT - Sin autenticación (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 403 o 401', function() {",
+                  "    pm.expect([401, 403]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contact_name\": \"Juan\",\n  \"contact_email\": \"juan@test.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/{{merchantId}}/contact",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "{{merchantId}}", "contact"]
+            },
+            "description": "Intenta actualizar sin JWT. Debe retornar 401/403."
+          }
+        }
+      ]
+    },
+    {
+      "name": "HU 1.4 - Activación de Comercio (Previo a HU 1.3)",
+      "item": [
+        {
+          "name": "1.4 PATCH - Activar comercio (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Status code es 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Estado cambió a ACTIVE', function() {",
+                  "    pm.expect(jsonData.status).to.equal('ACTIVE');",
+                  "});",
+                  "pm.test('Mensaje de éxito presente', function() {",
+                  "    pm.expect(jsonData.message).to.include('activated successfully');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Documentos verificados correctamente\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/{{merchantId}}/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "{{merchantId}}", "activate"]
+            },
+            "description": "Activa un comercio (cambia de INACTIVE a ACTIVE). Solo admin. Necesario para registrar datos bancarios."
+          }
+        },
+        {
+          "name": "1.4.1 PATCH - Activar sin ser admin (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 403', function() {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{merchantToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"intento no autorizado\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/{{merchantId}}/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "{{merchantId}}", "activate"]
+            },
+            "description": "Intenta activar sin ser admin. Debe retornar 403."
+          }
+        }
+      ]
+    },
+    {
+      "name": "HU 1.3 - Registrar Datos Bancarios",
+      "item": [
+        {
+          "name": "1.3.1 PUT - Registrar cuenta bancaria (exitoso)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Status code es 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Mensaje de éxito presente', function() {",
+                  "    pm.expect(jsonData.message).to.include('registered successfully');",
+                  "});",
+                  "pm.test('Comercio sigue ACTIVE', function() {",
+                  "    pm.expect(jsonData.status).to.equal('ACTIVE');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{merchantToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"iban\": \"{{iban}}\",\n  \"routing_number\": \"{{routingNumber}}\",\n  \"account_holder_name\": \"{{accountHolder}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/{{merchantId}}/bank-account",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "{{merchantId}}", "bank-account"]
+            },
+            "description": "Registra datos bancarios cifrados (AES-256-GCM). Solo para comercios ACTIVOS."
+          }
+        },
+        {
+          "name": "1.3.2 PUT - IBAN inválido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('Error menciona IBAN', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(JSON.stringify(jsonData)).to.include('IBAN').or.include('iban');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{merchantToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"iban\": \"IBAN-INVALIDO\",\n  \"routing_number\": \"{{routingNumber}}\",\n  \"account_holder_name\": \"{{accountHolder}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/{{merchantId}}/bank-account",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "{{merchantId}}", "bank-account"]
+            },
+            "description": "IBAN con formato inválido. Valida checksum ISO 7064."
+          }
+        },
+        {
+          "name": "1.3.3 PUT - Routing inválido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('Error menciona Routing', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(JSON.stringify(jsonData)).to.include('routing').or.include('Routing');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{merchantToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"iban\": \"{{iban}}\",\n  \"routing_number\": \"12345\",\n  \"account_holder_name\": \"{{accountHolder}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/{{merchantId}}/bank-account",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "{{merchantId}}", "bank-account"]
+            },
+            "description": "Routing number inválido (debe ser 9 dígitos)."
+          }
+        },
+        {
+          "name": "1.3.4 PUT - Comercio inactivo (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 403', function() {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{merchantToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"iban\": \"{{iban}}\",\n  \"routing_number\": \"{{routingNumber}}\",\n  \"account_holder_name\": \"{{accountHolder}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/MERCHANT-INACTIVO/bank-account",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "MERCHANT-INACTIVO", "bank-account"]
+            },
+            "description": "Intenta registrar datos bancarios en comercio inactivo. Debe retornar 403."
+          }
+        }
+      ]
+    },
+    {
+      "name": "HU 1.6 - Consultar Detalles de Comercio",
+      "item": [
+        {
+          "name": "1.6.1 GET - Consultar detalles (Como ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Status code es 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Contiene id del comercio', function() {",
+                  "    pm.expect(jsonData.id).to.exist;",
+                  "});",
+                  "pm.test('Admin ve datos bancarios', function() {",
+                  "    pm.expect(jsonData.bank_account_data).to.exist;",
+                  "});",
+                  "pm.test('Contiene email de contacto sin enmascarar (admin)', function() {",
+                  "    pm.expect(jsonData.contact_email).to.include('@');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/{{merchantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "{{merchantId}}"]
+            },
+            "description": "Consulta detalles del comercio como ADMIN. Ve todos los datos desencriptados."
+          }
+        },
+        {
+          "name": "1.6.2 GET - Consultar detalles (Como MERCHANT propietario)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Status code es 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Propietario ve datos bancarios', function() {",
+                  "    pm.expect(jsonData.bank_account_data).to.exist;",
+                  "});",
+                  "pm.test('Email de contacto visible para propietario', function() {",
+                  "    pm.expect(jsonData.contact_email).to.include('@');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{merchantToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/{{merchantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "{{merchantId}}"]
+            },
+            "description": "Consulta detalles del comercio como el propietario. Ve todos los datos."
+          }
+        },
+        {
+          "name": "1.6.3 GET - Consultar detalles (Como otro MERCHANT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Status code es 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Otro merchant NO ve datos bancarios', function() {",
+                  "    pm.expect(jsonData.bank_account_data).to.equal('[RESTRICTED]');",
+                  "});",
+                  "pm.test('Email de contacto enmascarado', function() {",
+                  "    pm.expect(jsonData.contact_email).to.include('***@');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer otro-merchant-token-aqui"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/{{merchantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "{{merchantId}}"]
+            },
+            "description": "Consulta detalles como otro comercio. Email enmascarado (***@domain.com), datos bancarios ocultos [RESTRICTED]."
+          }
+        },
+        {
+          "name": "1.6.4 GET - Comercio no encontrado (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 404', function() {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test('Error code es MERCHANT_NOT_FOUND', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error_code).to.equal('MERCHANT_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/00000000-0000-0000-0000-000000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "00000000-0000-0000-0000-000000000000"]
+            },
+            "description": "Intenta consultar comercio que no existe. Retorna 404."
+          }
+        },
+        {
+          "name": "1.6.5 GET - Sin autenticación (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 401 o 403', function() {",
+                  "    pm.expect([401, 403]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/{{merchantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "{{merchantId}}"]
+            },
+            "description": "Intenta consultar sin JWT. Retorna 401."
+          }
+        }
+      ]
+    },
+    {
+      "name": "HU 1.5 - Desactivación de Comercio",
+      "item": [
+        {
+          "name": "1.5 PATCH - Desactivar comercio (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Status code es 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Estado cambió a INACTIVE', function() {",
+                  "    pm.expect(jsonData.status).to.equal('INACTIVE');",
+                  "});",
+                  "pm.test('Mensaje de éxito presente', function() {",
+                  "    pm.expect(jsonData.message).to.include('deactivated successfully');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Incumplimiento de términos de servicio. Bloquea nuevas transacciones.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/{{merchantId}}/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "{{merchantId}}", "deactivate"]
+            },
+            "description": "Desactiva un comercio (cambia de ACTIVE a INACTIVE). Solo admin. Bloquea nuevas transacciones."
+          }
+        },
+        {
+          "name": "1.5.1 PATCH - Desactivar sin ser admin (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 403', function() {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{merchantToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"intento no autorizado\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/merchants/{{merchantId}}/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "merchants", "{{merchantId}}", "deactivate"]
+            },
+            "description": "Intenta desactivar sin ser admin. Retorna 403."
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 VALIDAR AUDITORÍA EN BD",
+      "item": [
+        {
+          "name": "SQL - Ver cambios de contacto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": ["{{baseUrl}}"]
+            },
+            "description": "Ejecutar en psql:\n\n```sql\nSELECT * FROM merchant_audit_detail \nWHERE merchant_id = 'merchantId-aqui'\nAND event_type = 'MERCHANT_CONTACT_UPDATED'\nORDER BY created_at DESC;\n```\n\nMuestra cambios en nombre y email de contacto."
+          }
+        },
+        {
+          "name": "SQL - Ver historial de estados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": ["{{baseUrl}}"]
+            },
+            "description": "Ejecutar en psql:\n\n```sql\nSELECT * FROM merchant_status_history \nWHERE merchant_id = 'merchantId-aqui'\nORDER BY created_at DESC;\n```\n\nMuestra: INACTIVE → ACTIVE → INACTIVE con timestamps y razones."
+          }
+        },
+        {
+          "name": "SQL - Ver todos los eventos de auditoría",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": ["{{baseUrl}}"]
+            },
+            "description": "Ejecutar en psql:\n\n```sql\nSELECT * FROM audit_event \nWHERE entity_id = 'merchantId-aqui'\nORDER BY happened_at DESC;\n```\n\nMuestra todos los eventos de auditoría registrados."
+          }
+        },
+        {
+          "name": "SQL - Verificar datos bancarios cifrados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": ["{{baseUrl}}"]
+            },
+            "description": "Ejecutar en psql:\n\n```sql\nSELECT id, bank_account_hash, \n       LENGTH(bank_account_encrypted) AS encrypted_length,\n       encrypted_bank_data IS NOT NULL AS has_encrypted_bytes\nFROM merchants \nWHERE id = 'merchantId-aqui';\n```\n\nConfirma que los datos bancarios están cifrados (no legibles)."
+          }
+        }
+      ]
+    }
+  ]
+}
+
