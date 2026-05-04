@@ -1,0 +1,608 @@
+{
+  "info": {
+    "name": "Embedded Payments - Sprint 1 Demo (HU 1.2-1.6)",
+    "description": "Postman collection demonstrating all 5 endpoints from Sprint 1 HUs 1.2-1.6. Includes JWT authentication, merchant operations, and comprehensive test cases for demo video.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "embedded-payments-demo-2024",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Setup & Authentication",
+      "description": "Pre-request setup for JWT token generation and environment variables",
+      "item": [
+        {
+          "name": "1. Generate Admin JWT Token",
+          "description": "Generate a JWT token for admin operations (activate/deactivate merchants)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Extract JWT token from response",
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    pm.environment.set('jwt_token', responseData.token);",
+                  "    pm.environment.set('merchant_id', responseData.merchant_id);",
+                  "    console.log('✓ Admin JWT token generated and stored');",
+                  "    pm.test('Token should be present', function() {",
+                  "        pm.expect(responseData.token).to.be.truthy;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@embedded-payments.com\",\n  \"password\": \"admin@123\",\n  \"role\": \"ROLE_ADMIN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/v1/auth/login",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "2. Generate Merchant JWT Token",
+          "description": "Generate a JWT token for merchant operations (update contact, register bank account)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Extract JWT token from response",
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    pm.environment.set('merchant_jwt_token', responseData.token);",
+                  "    pm.environment.set('merchant_id_owner', responseData.merchant_id);",
+                  "    console.log('✓ Merchant JWT token generated and stored');",
+                  "    pm.test('Token should be present', function() {",
+                  "        pm.expect(responseData.token).to.be.truthy;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"merchant@example.com\",\n  \"password\": \"merchant@123\",\n  \"role\": \"ROLE_MERCHANT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/v1/auth/login",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "HU 1.2 - Update Merchant Contact",
+      "description": "PUT /api/v1/merchants/{id}/contact - Actualizar información de contacto del comercio",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Pre-request: Ensure merchant ID is set",
+              "if (!pm.environment.get('merchant_id')) {",
+              "    console.warn('⚠️  Merchant ID not set. Please run the Setup requests first.');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{merchant_jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"contact_name\": \"Juan Esteban Mosquera\",\n  \"contact_email\": \"juan.mosquera@embedded-payments.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseURL}}/api/v1/merchants/{{merchant_id}}/contact",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "merchants",
+            "{{merchant_id}}",
+            "contact"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "HU 1.3 - Register Bank Account",
+      "description": "PUT /api/v1/merchants/{id}/bank-account - Registrar datos bancarios del comercio\n\nValidations:\n- IBAN format: ES9121000418450200051332 (ISO 7064 checksum)\n- Routing Number: 021000021 (9 digits with valid checksum)\n- Account holder name: Required, non-empty",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 - Bank Account Registered', function() {",
+              "    pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "",
+              "pm.test('Response contains merchant details', function() {",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData).to.have.property('id');",
+              "    pm.expect(responseData).to.have.property('status');",
+              "    pm.expect(responseData.message).to.include('Bank account registered successfully');",
+              "});",
+              "",
+              "pm.test('Merchant status should be ACTIVE after bank account registration', function() {",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData.status).to.equal('ACTIVE');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{merchant_jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"iban\": \"ES9121000418450200051332\",\n  \"routing_number\": \"021000021\",\n  \"account_holder_name\": \"Empresa Payments S.L.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseURL}}/api/v1/merchants/{{merchant_id}}/bank-account",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "merchants",
+            "{{merchant_id}}",
+            "bank-account"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "HU 1.4 - Activate Merchant",
+      "description": "PATCH /api/v1/merchants/{id}/activate - Activar un comercio (Admin only)\n\nAuthorization: ROLE_ADMIN only\nValid state transition: INACTIVE → ACTIVE",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 - Merchant Activated', function() {",
+              "    pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "",
+              "pm.test('Response indicates successful activation', function() {",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData.message).to.include('Merchant activated successfully');",
+              "});",
+              "",
+              "pm.test('Merchant status should be ACTIVE', function() {",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData.status).to.equal('ACTIVE');",
+              "});",
+              "",
+              "pm.test('Response includes timestamp and metadata', function() {",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData).to.have.property('updated_at');",
+              "    pm.expect(responseData).to.have.property('id');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reason\": \"Documentos verificados y aprobados correctamente\"\n}"
+        },
+        "url": {
+          "raw": "{{baseURL}}/api/v1/merchants/{{merchant_id}}/activate",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "merchants",
+            "{{merchant_id}}",
+            "activate"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "HU 1.5 - Deactivate Merchant",
+      "description": "PATCH /api/v1/merchants/{id}/deactivate - Desactivar un comercio (Admin only)\n\nAuthorization: ROLE_ADMIN only\nValid state transitions: ACTIVE/SUSPENDED → INACTIVE\nBlocks new payment transactions",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 - Merchant Deactivated', function() {",
+              "    pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "",
+              "pm.test('Response indicates successful deactivation', function() {",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData.message).to.include('Merchant deactivated successfully');",
+              "});",
+              "",
+              "pm.test('Merchant status should be INACTIVE', function() {",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData.status).to.equal('INACTIVE');",
+              "});",
+              "",
+              "pm.test('Timestamp should be updated', function() {",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData).to.have.property('updated_at');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reason\": \"Incumplimiento de términos de servicio\"\n}"
+        },
+        "url": {
+          "raw": "{{baseURL}}/api/v1/merchants/{{merchant_id}}/deactivate",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "merchants",
+            "{{merchant_id}}",
+            "deactivate"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "HU 1.6 - Get Merchant Details",
+      "description": "GET /api/v1/merchants/{id} - Consultar detalles del comercio\n\nSecurity Features:\n- Data masking for contact email (non-owner view): ***@example.com\n- Bank account data hidden unless requestor is owner or admin\n- Admin always sees complete unmasked data",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 - Merchant Details Retrieved', function() {",
+              "    pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "",
+              "pm.test('Response contains required merchant fields', function() {",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData).to.have.property('id');",
+              "    pm.expect(responseData).to.have.property('name');",
+              "    pm.expect(responseData).to.have.property('email');",
+              "    pm.expect(responseData).to.have.property('status');",
+              "    pm.expect(responseData).to.have.property('updated_at');",
+              "});",
+              "",
+              "pm.test('Contact information should be present', function() {",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData).to.have.property('contact_name');",
+              "    pm.expect(responseData).to.have.property('contact_email');",
+              "});",
+              "",
+              "pm.test('Response should include data masking/encryption indicators', function() {",
+              "    const responseData = pm.response.json();",
+              "    // Either bank_account_data is visible or indicates encryption/restriction",
+              "    pm.expect(responseData).to.have.property('bank_account_data');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{merchant_jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseURL}}/api/v1/merchants/{{merchant_id}}",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "merchants",
+            "{{merchant_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Error Scenarios - Optional Testing",
+      "description": "Optional error scenario tests for comprehensive demo coverage",
+      "item": [
+        {
+          "name": "Invalid IBAN Format",
+          "description": "Test HU 1.3 with invalid IBAN - should return 400 Bad Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 - Invalid IBAN', function() {",
+                  "    pm.expect([400, 422]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "pm.test('Error message mentions IBAN validation', function() {",
+                  "    const responseData = pm.response.json();",
+                  "    pm.expect(JSON.stringify(responseData).toLowerCase()).to.include('iban');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{merchant_jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"iban\": \"INVALID_IBAN\",\n  \"routing_number\": \"021000021\",\n  \"account_holder_name\": \"Empresa S.L.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/v1/merchants/{{merchant_id}}/bank-account",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchants",
+                "{{merchant_id}}",
+                "bank-account"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Missing JWT Token",
+          "description": "Test authentication - should return 401 Unauthorized",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 - Missing Token', function() {",
+                  "    pm.expect(pm.response.code).to.equal(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/api/v1/merchants/{{merchant_id}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchants",
+                "{{merchant_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Unauthorized Admin Operation",
+          "description": "Test authorization - non-admin trying to activate merchant - should return 403 Forbidden",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403 - Forbidden (non-admin)', function() {",
+                  "    pm.expect(pm.response.code).to.equal(403);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{merchant_jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Test reason\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/v1/merchants/{{merchant_id}}/activate",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "merchants",
+                "{{merchant_id}}",
+                "activate"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script for all requests"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseURL",
+      "value": "http://localhost:8085",
+      "type": "string",
+      "description": "Backend API base URL - Change to https://embedded-payments-1.onrender.com for production"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string",
+      "description": "Admin JWT token (generated by 'Generate Admin JWT Token' request)"
+    },
+    {
+      "key": "merchant_jwt_token",
+      "value": "",
+      "type": "string",
+      "description": "Merchant JWT token (generated by 'Generate Merchant JWT Token' request)"
+    },
+    {
+      "key": "merchant_id",
+      "value": "",
+      "type": "string",
+      "description": "Merchant ID (populated from login response)"
+    },
+    {
+      "key": "merchant_id_owner",
+      "value": "",
+      "type": "string",
+      "description": "Merchant ID for owner operations (populated from merchant login response)"
+    }
+  ]
+}
