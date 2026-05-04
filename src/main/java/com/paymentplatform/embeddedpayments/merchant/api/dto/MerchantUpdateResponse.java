@@ -1,6 +1,7 @@
 package com.paymentplatform.embeddedpayments.merchant.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -24,7 +25,10 @@ public record MerchantUpdateResponse(
         Instant updatedAt,
 
         @JsonProperty("message")
-        String message
+        String message,
+
+        @JsonProperty("api_key")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        String apiKey
 ) {
 }
-

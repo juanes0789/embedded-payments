@@ -63,7 +63,8 @@ public class MerchantController {
      */
     @PostMapping
     public ResponseEntity<MerchantUpdateResponse> register(@Valid @RequestBody RegisterMerchantRequest request) {
-        Merchant merchant = registerMerchantUseCase.execute(request.name(), request.email());
+        RegisterMerchantUseCase.RegisteredMerchant registeredMerchant = registerMerchantUseCase.execute(request.name(), request.email());
+        Merchant merchant = registeredMerchant.merchant();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new MerchantUpdateResponse(
                         merchant.getId(),
@@ -71,7 +72,8 @@ public class MerchantController {
                         merchant.getEmail(),
                         merchant.getStatus(),
                         merchant.getUpdatedAt(),
-                        "Merchant registered successfully"
+                        "Merchant registered successfully",
+                        registeredMerchant.apiKey()
                 ));
     }
 
@@ -98,7 +100,8 @@ public class MerchantController {
                 updatedMerchant.getEmail(),
                 updatedMerchant.getStatus(),
                 updatedMerchant.getUpdatedAt(),
-                "Contact information updated successfully"
+                "Contact information updated successfully",
+                null
         ));
     }
 
@@ -126,7 +129,8 @@ public class MerchantController {
                 updatedMerchant.getEmail(),
                 updatedMerchant.getStatus(),
                 updatedMerchant.getUpdatedAt(),
-                "Bank account registered successfully"
+                "Bank account registered successfully",
+                null
         ));
     }
 
@@ -152,7 +156,8 @@ public class MerchantController {
                 updatedMerchant.getEmail(),
                 updatedMerchant.getStatus(),
                 updatedMerchant.getUpdatedAt(),
-                "Merchant activated successfully"
+                "Merchant activated successfully",
+                null
         ));
     }
 
@@ -178,7 +183,8 @@ public class MerchantController {
                 updatedMerchant.getEmail(),
                 updatedMerchant.getStatus(),
                 updatedMerchant.getUpdatedAt(),
-                "Merchant deactivated successfully"
+                "Merchant deactivated successfully",
+                null
         ));
     }
 
@@ -210,4 +216,3 @@ public class MerchantController {
             @NotBlank @Email String email) {
     }
 }
-

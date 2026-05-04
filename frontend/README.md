@@ -6,7 +6,7 @@ Vue 3 + TypeScript + Vite frontend application for the Embedded Payments Platfor
 
 ### Prerequisites
 - Node.js 18+
-- Backend running on `http://localhost:8080`
+- Backend running on `http://localhost:8085`
 
 ### Installation & Development
 
@@ -27,7 +27,7 @@ npm run dev
 Create `.env.development` in `frontend/payment-gateway-ui/`:
 
 ```env
-VITE_API_URL=http://localhost:8080
+VITE_API_URL=http://localhost:8085
 VITE_APP_NAME="Payment Gateway (Development)"
 VITE_APP_VERSION=0.1.0
 VITE_LOG_LEVEL=debug
@@ -94,7 +94,7 @@ npm run test:e2e     # Run end-to-end tests
 
 The frontend communicates with the backend via REST API:
 
-- Base URL: `http://localhost:8080/api/v1`
+- Base URL: `http://localhost:8085/api/v1`
 - Authentication: JWT Bearer token in `Authorization` header
 - All requests/responses use JSON format
 
@@ -141,7 +141,7 @@ Tailwind CSS for utility-first styling with custom theme colors:
 - Clear node_modules and reinstall if needed
 
 ### API connection errors
-- Verify backend is running on port 8080
+- Verify backend is running on port 8085
 - Check CORS configuration in backend
 - Verify correct API URL in .env file
 

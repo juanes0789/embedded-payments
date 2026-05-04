@@ -1,18 +1,20 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { User, LoginResponse } from '@/types'
+import { User } from '@/types'
 import { authService } from '@/services/auth'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('token'))
-  const refreshToken = ref<string | null>(localStorage.getItem('refreshToken'))
   const user = ref<User | null>(null)
   const isLoading = ref(false)
+  const isInitialized = ref(false)
   const error = ref<string | null>(null)
 
   const isAuthenticated = computed(() => !!token.value)
   const isAdmin = computed(() => user.value?.role === 'ROLE_ADMIN')
-  const isMerchant = computed(() => user.value?.role === 'ROLE_MERCHANT')
+  const isMerchant = computed(
+    () => user.value?.role === 'ROLE_MERCHANT' || user.value?.role === 'ROLE_ADMIN'
+  )
 
   async function login(email: string, password: string) {
     isLoading.value = true
@@ -20,11 +22,11 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await authService.login(email, password)
       token.value = response.token
-      refreshToken.value = response.refreshToken
-      user.value = response.user
       localStorage.setItem('token', response.token)
-      localStorage.setItem('refreshToken', response.refreshToken)
+      user.value = await authService.getCurrentUser()
+      isInitialized.value = true
     } catch (err: any) {
+      logout(true)
       error.value = err.response?.data?.message || 'Login failed'
       throw err
     } finally {
@@ -32,26 +34,51 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function logout() {
+  async function initializeSession() {
+    if (isInitialized.value) {
+      return
+    }
+
+    if (!token.value) {
+      isInitialized.value = true
+      return
+    }
+
+    isLoading.value = true
+    error.value = null
+    try {
+      user.value = await authService.getCurrentUser()
+    } catch (_err) {
+      logout(true)
+    } finally {
+      isInitialized.value = true
+      isLoading.value = false
+    }
+  }
+
+  function logout(skipApiCall = false) {
     token.value = null
-    refreshToken.value = null
     user.value = null
+    error.value = null
+    isInitialized.value = true
     localStorage.removeItem('token')
-    localStorage.removeItem('refreshToken')
-    authService.logout()
+
+    if (!skipApiCall) {
+      authService.logout()
+    }
   }
 
   return {
     token,
-    refreshToken,
     user,
     isLoading,
+    isInitialized,
     error,
     isAuthenticated,
     isAdmin,
     isMerchant,
     login,
+    initializeSession,
     logout,
   }
 })
-

@@ -70,8 +70,9 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+  await authStore.initializeSession()
   const requiresAuth = to.meta.requiresAuth !== false
 
   if (requiresAuth && !authStore.isAuthenticated) {
@@ -84,4 +85,3 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
-

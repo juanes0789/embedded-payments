@@ -17,8 +17,10 @@ export interface PaginatedResponse<T> {
 export interface User {
   id: string;
   email: string;
-  role: 'ROLE_ADMIN' | 'ROLE_MERCHANT';
-  createdAt: Date;
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'DISABLED';
+  role?: 'ROLE_ADMIN' | 'ROLE_MERCHANT' | 'ROLE_USER';
+  merchantId?: string;
+  createdAt?: Date;
 }
 
 export interface LoginRequest {
@@ -28,8 +30,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  refreshToken: string;
-  user: User;
+  expiresAt: string;
 }
 
 // Merchant Types
@@ -95,4 +96,3 @@ export interface TransactionReport {
   total: number;
   period: string;
 }
-

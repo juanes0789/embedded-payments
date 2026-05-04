@@ -1,56 +1,92 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center p-4">
+  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
     <div class="w-full max-w-md">
-      <div class="bg-white rounded-lg shadow-xl p-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Payment Gateway</h1>
-        <p class="text-gray-600 mb-8">Manage your payments and merchant settings</p>
+      <!-- Card -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 transition-all duration-200 p-8 backdrop-blur-lg bg-white/95 border border-white/20">
+        <!-- Header -->
+        <div class="mb-8">
+          <h1 class="text-3xl font-bold text-slate-900 mb-2">Welcome Back</h1>
+          <p class="text-slate-600">Sign in to your merchant account</p>
+        </div>
 
-        <form @submit.prevent="handleLogin" class="space-y-4">
+        <!-- Form -->
+        <form @submit.prevent="handleLogin" class="space-y-5">
+          <!-- Email -->
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">
-              Email
-            </label>
+            <label for="email" class="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
             <input
               id="email"
               v-model="form.email"
               type="email"
               required
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="your@email.com"
+              placeholder="merchant@example.com"
+              class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
             />
-            <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
+            <p v-if="errors.email" class="mt-2 text-sm text-red-600">{{ errors.email }}</p>
           </div>
 
+          <!-- Password -->
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">
-              Password
-            </label>
+            <label for="password" class="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
             <input
               id="password"
               v-model="form.password"
               type="password"
               required
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               placeholder="••••••••"
+              class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
             />
-            <p v-if="errors.password" class="mt-1 text-sm text-red-600">{{ errors.password }}</p>
+            <p v-if="errors.password" class="mt-2 text-sm text-red-600">{{ errors.password }}</p>
           </div>
 
-          <p v-if="authStore.error" class="text-sm text-red-600">{{ authStore.error }}</p>
+          <!-- Error Message -->
+          <transition
+            enter-active-class="transition ease-in duration-100"
+            leave-active-class="transition ease-out duration-75"
+            enter-from-class="opacity-0"
+            leave-to-class="opacity-0"
+          >
+            <div v-if="authStore.error" class="flex items-start p-3 bg-red-50 border border-red-200 rounded-lg">
+              <svg class="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+              <span class="text-sm text-red-800">{{ authStore.error }}</span>
+            </div>
+          </transition>
 
+          <!-- Submit Button -->
           <button
             type="submit"
             :disabled="authStore.isLoading"
-            class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            class="w-full px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ authStore.isLoading ? 'Signing in...' : 'Sign In' }}
+            <span v-if="authStore.isLoading" class="flex items-center justify-center">
+              <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Signing in...
+            </span>
+            <span v-else>Sign In</span>
           </button>
         </form>
 
-        <p class="mt-4 text-center text-sm text-gray-600">
-          Demo credentials: Use test@example.com / password
-        </p>
+        <!-- Footer -->
+        <div class="mt-6 pt-6 border-t border-slate-200">
+          <p class="text-center text-sm text-slate-600">
+            Demo credentials:
+            <br />
+            <span class="font-medium text-slate-900">test@example.com / password</span>
+          </p>
+        </div>
       </div>
+
+      <!-- Info Text -->
+      <p class="text-center text-sm text-slate-400 mt-6">
+        Payment Gateway Platform
+        <br />
+        <span class="text-xs">Secure merchant payment processing</span>
+      </p>
     </div>
   </div>
 </template>

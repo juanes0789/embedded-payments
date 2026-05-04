@@ -1,5 +1,5 @@
 import api from './api'
-import { LoginRequest, LoginResponse, User } from '@/types'
+import { LoginResponse, User } from '@/types'
 
 export const authService = {
   login: async (email: string, password: string): Promise<LoginResponse> => {
@@ -30,4 +30,3 @@ export const authService = {
     return response.data
   },
 }
-
