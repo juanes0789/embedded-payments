@@ -4,8 +4,40 @@
       <h1 class="text-3xl font-bold text-gray-900 mb-8">Transactions</h1>
 
       <div class="bg-white rounded-lg shadow">
-        <div class="px-6 py-4 border-b">
-          <p class="text-sm text-gray-600">View your recent transactions and payment history</p>
+        <div class="px-6 py-4 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <p class="text-sm text-gray-600">View your recent transactions and payment history</p>
+          </div>
+
+          <!-- Filters Panel (HU 2.2) -->
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Search ID -->
+            <div class="relative">
+              <input
+                v-model="searchId"
+                type="text"
+                placeholder="Search by ID..."
+                class="pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-48 md:w-60 bg-white text-gray-900 placeholder-gray-400"
+              />
+              <span class="absolute left-3 top-2.5 text-gray-400">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </span>
+            </div>
+
+            <!-- Status Filter -->
+            <select
+              v-model="selectedStatus"
+              @change="fetchTransactions"
+              class="px-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-gray-900"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="PENDING">Pending</option>
+              <option value="FAILED">Failed</option>
+            </select>
+          </div>
         </div>
 
         <div class="overflow-x-auto">
@@ -27,7 +59,7 @@
                 </td>
               </tr>
               <tr v-for="transaction in transactions" :key="transaction.id" class="hover:bg-gray-50">
-                <td class="px-6 py-4 text-sm text-gray-900">
+                <td class="px-6 py-4 text-sm text-gray-900 font-mono">
                   {{ transaction.id.substring(0, 8) }}...
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-900">
@@ -56,7 +88,7 @@
                 <td class="px-6 py-4 text-sm">
                   <router-link
                     :to="`/transactions/${transaction.id}`"
-                    class="text-indigo-600 hover:text-indigo-900"
+                    class="text-indigo-600 hover:text-indigo-900 font-medium"
                   >
                     View
                   </router-link>
@@ -71,20 +103,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { transactionService } from '@/services/transactions'
 import { Transaction } from '@/types'
 
-const transactions = ref<Transaction[]>([])
+const allTransactions = ref<Transaction[]>([])
+const searchId = ref('')
+const selectedStatus = ref('ALL')
 
-onMounted(async () => {
+const transactions = computed(() => {
+  return allTransactions.value.filter(t => {
+    const matchesId = !searchId.value.trim() || t.id.toLowerCase().includes(searchId.value.toLowerCase().trim())
+    return matchesId
+  })
+})
+
+async function fetchTransactions() {
   try {
-    const response = await transactionService.list()
-    transactions.value = response.items
+    const response = await transactionService.list(1, 50, selectedStatus.value)
+    allTransactions.value = response.items
   } catch (error) {
     console.error('Failed to fetch transactions:', error)
   }
+}
+
+onMounted(async () => {
+  await fetchTransactions()
 })
 </script>
 

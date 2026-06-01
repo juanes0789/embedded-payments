@@ -24,5 +24,15 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     public Optional<PaymentTransaction> findById(UUID id) {
         return jpaRepository.findById(id);
     }
+
+    @Override
+    public org.springframework.data.domain.Page<PaymentTransaction> findByMerchantId(UUID merchantId, org.springframework.data.domain.Pageable pageable) {
+        return jpaRepository.findByMerchantId(merchantId, pageable);
+    }
+
+    @Override
+    public org.springframework.data.domain.Page<PaymentTransaction> findByMerchantIdAndStatus(UUID merchantId, String status, org.springframework.data.domain.Pageable pageable) {
+        return jpaRepository.findByMerchantIdAndStatus(merchantId, status, pageable);
+    }
 }
 

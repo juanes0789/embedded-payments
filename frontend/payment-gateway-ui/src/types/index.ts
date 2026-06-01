@@ -72,6 +72,15 @@ export interface Transaction {
   status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
   customerEmail: string;
   customerName?: string;
+  reasonCode?: string;
+  statusHistory?: Array<{
+    id: string;
+    previousStatus: string | null;
+    newStatus: string;
+    changedBy: string;
+    reasonCode: string | null;
+    createdAt: string;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }
