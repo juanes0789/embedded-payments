@@ -417,6 +417,16 @@ async function loadPaymentIntent() {
     const intent = await getPaymentIntent(route.params.checkoutId as string)
     paymentIntent.value = intent
     notificationStore.success(`Payment intent loaded: ${formatMoney(intent.amount, intent.currency)}`)
+    // If the payment intent was already completed on the backend, show the completed UI
+    const status = (intent.status || '').toUpperCase()
+    if (status === 'SUCCEEDED' || status === 'COMPLETED') {
+      paymentCompleted.value = true
+      // populate a minimal receipt from the intent data when available
+      receipt.reference = intent.id
+      receipt.paidAt = intent.updatedAt ? new Date(intent.updatedAt).toLocaleString() : new Date(intent.createdAt).toLocaleString()
+      // try to prefill email if available on intent (some flows store customer on intent)
+      // (PaymentIntent.customerId may exist; frontend does not expose customer email here)
+    }
   } catch (error: any) {
     const status = error.response?.status
     if (status === 404) {
