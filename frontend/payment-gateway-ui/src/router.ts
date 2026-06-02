@@ -89,7 +89,9 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
   await authStore.initializeSession()
-  const requiresAuth = to.meta.requiresAuth !== false
+
+  // Explicitly check if route requires auth (default: false means public)
+  const requiresAuth = to.meta.requiresAuth === true
 
   if (requiresAuth && !authStore.isAuthenticated) {
     next('/login')
