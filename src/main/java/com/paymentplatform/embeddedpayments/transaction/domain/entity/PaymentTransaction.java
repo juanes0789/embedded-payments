@@ -22,7 +22,7 @@ public class PaymentTransaction {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
-    @Column(nullable = false, length = 3)
+    @Column(nullable = false, length = 10)
     private String currency;
 
     @Column(nullable = false)
@@ -34,11 +34,14 @@ public class PaymentTransaction {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @Column(name = "reason_code")
+    private String reasonCode;
+
     protected PaymentTransaction() {
     }
 
     public PaymentTransaction(UUID id, UUID paymentIntentId, BigDecimal amount, String currency, String status) {
-        this(id, paymentIntentId, amount, currency, status, Instant.now(), Instant.now());
+        this(id, paymentIntentId, amount, currency, status, Instant.now(), Instant.now(), null);
     }
 
     public PaymentTransaction(UUID id,
@@ -48,13 +51,25 @@ public class PaymentTransaction {
                               String status,
                               Instant createdAt,
                               Instant updatedAt) {
+        this(id, paymentIntentId, amount, currency, status, createdAt, updatedAt, null);
+    }
+
+    public PaymentTransaction(UUID id,
+                              UUID paymentIntentId,
+                              BigDecimal amount,
+                              String currency,
+                              String status,
+                              Instant createdAt,
+                              Instant updatedAt,
+                              String reasonCode) {
         this.id = id;
         this.paymentIntentId = paymentIntentId;
         this.amount = amount;
-        this.currency = currency;
+        this.currency = currency != null ? currency : "USD";
         this.status = status;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.reasonCode = reasonCode;
     }
 
     public UUID getId() {
@@ -83,6 +98,10 @@ public class PaymentTransaction {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public String getReasonCode() {
+        return reasonCode;
     }
 
     public void markSucceeded() {
@@ -136,4 +155,5 @@ public class PaymentTransaction {
         };
     }
 }
+
 

@@ -2,8 +2,6 @@ package com.paymentplatform.embeddedpayments.transaction.application;
 
 import com.paymentplatform.embeddedpayments.payment.domain.entity.PaymentIntent;
 import com.paymentplatform.embeddedpayments.payment.domain.repository.PaymentRepository;
-import com.paymentplatform.embeddedpayments.merchant.domain.entity.Merchant;
-import com.paymentplatform.embeddedpayments.merchant.domain.repository.MerchantRepository;
 import com.paymentplatform.embeddedpayments.shared.exception.DomainException;
 import com.paymentplatform.embeddedpayments.transaction.domain.entity.PaymentTransaction;
 import com.paymentplatform.embeddedpayments.transaction.domain.repository.TransactionRepository;
@@ -13,42 +11,36 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CreateTransactionUseCase {
 
     private final TransactionRepository transactionRepository;
     private final PaymentRepository paymentRepository;
-    private final MerchantRepository merchantRepository;
     private final TransactionDomainService transactionDomainService;
+    private final com.paymentplatform.embeddedpayments.transaction.domain.repository.TransactionStatusHistoryRepository transactionStatusHistoryRepository;
 
     public CreateTransactionUseCase(TransactionRepository transactionRepository,
                                     PaymentRepository paymentRepository,
-                                    MerchantRepository merchantRepository,
-                                    TransactionDomainService transactionDomainService) {
+                                    TransactionDomainService transactionDomainService,
+                                    com.paymentplatform.embeddedpayments.transaction.domain.repository.TransactionStatusHistoryRepository transactionStatusHistoryRepository) {
         this.transactionRepository = transactionRepository;
         this.paymentRepository = paymentRepository;
-        this.merchantRepository = merchantRepository;
         this.transactionDomainService = transactionDomainService;
+        this.transactionStatusHistoryRepository = transactionStatusHistoryRepository;
     }
 
-    @Transactional
     public PaymentTransaction execute(UUID merchantId, UUID paymentIntentId, BigDecimal amount) {
+        return execute(merchantId, paymentIntentId, amount, "SUCCEEDED", null);
+    }
+
+    public PaymentTransaction execute(UUID merchantId, UUID paymentIntentId, BigDecimal amount, String status, String reasonCode) {
         PaymentIntent intent = paymentRepository.findById(paymentIntentId)
                 .orElseThrow(() -> new DomainException(
                         HttpStatus.NOT_FOUND,
                         "PAYMENT_INTENT_NOT_FOUND",
                         "Payment intent not found",
                         List.of("paymentIntentId: " + paymentIntentId)
-                ));
-
-        Merchant merchant = merchantRepository.findById(merchantId)
-                .orElseThrow(() -> new DomainException(
-                        HttpStatus.NOT_FOUND,
-                        "MERCHANT_NOT_FOUND",
-                        "Merchant not found",
-                        List.of("merchantId: " + merchantId)
                 ));
 
         if (!intent.getMerchantId().equals(merchantId)) {
@@ -60,41 +52,22 @@ public class CreateTransactionUseCase {
             );
         }
 
-        if (!merchant.isActive()) {
-            throw new DomainException(
-                    HttpStatus.FORBIDDEN,
-                    "MERCHANT_INACTIVE",
-                    "Merchant must be active to process payments",
-                    List.of("merchantId: " + merchantId, "status: " + merchant.getStatus())
-            );
-        }
+        PaymentTransaction transaction = transactionDomainService.register(paymentIntentId, amount, intent.getCurrency(), status, reasonCode);
+        PaymentTransaction savedTransaction = transactionRepository.save(transaction);
 
-        if (!"CREATED".equalsIgnoreCase(intent.getStatus()) && !"PROCESSING".equalsIgnoreCase(intent.getStatus())) {
-            throw new DomainException(
-                    HttpStatus.CONFLICT,
-                    "PAYMENT_INTENT_NOT_PROCESSABLE",
-                    "Payment intent cannot be processed in its current state",
-                    List.of("paymentIntentId: " + paymentIntentId, "status: " + intent.getStatus())
-            );
-        }
-
-        transactionRepository.findByPaymentIntentId(paymentIntentId).ifPresent(existing -> {
-            if (!existing.isTerminal()) {
-                throw new DomainException(
-                        HttpStatus.CONFLICT,
-                        "TRANSACTION_ALREADY_EXISTS",
-                        "A transaction is already being processed for this payment intent",
-                        List.of("transactionId: " + existing.getId(), "paymentIntentId: " + paymentIntentId)
+        // Guardar en la bitácora inmutable el cambio de estado inicial (HU 4.1)
+        com.paymentplatform.embeddedpayments.transaction.domain.entity.TransactionStatusHistory history = 
+                new com.paymentplatform.embeddedpayments.transaction.domain.entity.TransactionStatusHistory(
+                        UUID.randomUUID(),
+                        savedTransaction.getId(),
+                        null,
+                        savedTransaction.getStatus(),
+                        "API_CLIENT", // Actor originario
+                        savedTransaction.getReasonCode(),
+                        savedTransaction.getCreatedAt()
                 );
-            }
-        });
+        transactionStatusHistoryRepository.save(history);
 
-        if ("CREATED".equalsIgnoreCase(intent.getStatus())) {
-            intent.markProcessing();
-            paymentRepository.save(intent);
-        }
-
-        PaymentTransaction transaction = transactionDomainService.register(paymentIntentId, amount, intent.getCurrency());
-        return transactionRepository.save(transaction);
+        return savedTransaction;
     }
 }

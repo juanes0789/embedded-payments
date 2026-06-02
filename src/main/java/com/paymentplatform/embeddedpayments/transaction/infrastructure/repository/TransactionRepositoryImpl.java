@@ -2,7 +2,6 @@ package com.paymentplatform.embeddedpayments.transaction.infrastructure.reposito
 
 import com.paymentplatform.embeddedpayments.transaction.domain.entity.PaymentTransaction;
 import com.paymentplatform.embeddedpayments.transaction.domain.repository.TransactionRepository;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
@@ -27,18 +26,13 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     }
 
     @Override
-    public Optional<PaymentTransaction> findByPaymentIntentId(UUID paymentIntentId) {
-        return jpaRepository.findByPaymentIntentId(paymentIntentId);
+    public org.springframework.data.domain.Page<PaymentTransaction> findByMerchantId(UUID merchantId, org.springframework.data.domain.Pageable pageable) {
+        return jpaRepository.findByMerchantId(merchantId, pageable);
     }
 
     @Override
-    public List<PaymentTransaction> findAll() {
-        return jpaRepository.findAll();
-    }
-
-    @Override
-    public List<PaymentTransaction> findByMerchantId(UUID merchantId) {
-        return jpaRepository.findByMerchantId(merchantId);
+    public org.springframework.data.domain.Page<PaymentTransaction> findByMerchantIdAndStatus(UUID merchantId, String status, org.springframework.data.domain.Pageable pageable) {
+        return jpaRepository.findByMerchantIdAndStatus(merchantId, status, pageable);
     }
 }
 

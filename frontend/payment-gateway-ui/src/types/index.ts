@@ -70,10 +70,38 @@ export interface Transaction {
   paymentIntentId: string;
   amount: number;
   currency: string;
+  status: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELED' | 'REFUNDED' | 'COMPLETED' | 'REFUND_PENDING';
   status: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELED' | 'REFUNDED';
+  customerEmail?: string;
+  customerName?: string;
+  reasonCode?: string;
+  statusHistory?: Array<{
+    id: string;
+    previousStatus: string | null;
+    newStatus: string;
+    changedBy: string;
+    reasonCode: string | null;
+    createdAt: string;
+  }>;
   paymentMethod?: string;
   createdAt: Date | string;
   updatedAt?: Date | string;
+=======
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
+  customerEmail: string;
+  customerName?: string;
+  reasonCode?: string;
+  statusHistory?: Array<{
+    id: string;
+    previousStatus: string | null;
+    newStatus: string;
+    changedBy: string;
+    reasonCode: string | null;
+    createdAt: string;
+  }>;
+  createdAt: Date;
+  updatedAt: Date;
+>>>>>>> origin/dev_sebas
 }
 
 export interface Refund {
