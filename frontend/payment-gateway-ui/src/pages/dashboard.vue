@@ -58,7 +58,7 @@
               </div>
               <div class="border-l-2 border-slate-200 pl-4">
                 <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Account ID</p>
-                <p class="text-lg font-mono text-slate-900 mt-1">{{ merchantStore.current.id.slice(0, 8) }}...</p>
+                <p class="text-lg font-mono text-slate-900 mt-1">{{ merchantStore.current.id ? merchantStore.current.id.slice(0, 8) + '...' : 'N/A' }}</p>
               </div>
             </div>
           </div>
@@ -225,8 +225,8 @@
                 </thead>
                 <tbody>
                   <tr v-for="tx in dashboardTransactions" :key="tx.id" class="border-b border-slate-100 text-sm text-slate-700">
-                    <td class="py-3 pr-4 font-mono">{{ tx.id.slice(0, 8) }}...</td>
-                    <td class="py-3 pr-4 font-mono">{{ tx.paymentIntentId.slice(0, 8) }}...</td>
+                    <td class="py-3 pr-4 font-mono">{{ tx.id ? tx.id.slice(0, 8) + '...' : 'N/A' }}</td>
+                    <td class="py-3 pr-4 font-mono">{{ tx.paymentIntentId ? tx.paymentIntentId.slice(0, 8) + '...' : 'N/A' }}</td>
                     <td class="py-3 pr-4 font-semibold text-slate-900">{{ tx.currency }} {{ Number(tx.amount).toFixed(2) }}</td>
                     <td class="py-3 pr-4">
                       <span
