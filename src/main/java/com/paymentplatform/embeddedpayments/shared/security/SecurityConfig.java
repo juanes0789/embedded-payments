@@ -69,7 +69,11 @@ public class SecurityConfig {
                 "http://localhost:*",
                 "http://127.0.0.1:*",
                 "https://*.onrender.com",
-                "https://embedded-payments-1.onrender.com"
+                "https://embedded-payments-1.onrender.com",
+                // Allow deployments hosted on Vercel (preview and production domains)
+                "https://*.vercel.app",
+                // If you use vercel.app with region prefixes or custom subdomains, add them here
+                "https://embedded-payments1-isix3pfbf-juan-esteban-mosqueras-projects.vercel.app"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "X-API-Key"));
