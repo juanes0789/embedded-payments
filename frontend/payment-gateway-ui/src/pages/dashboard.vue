@@ -63,45 +63,19 @@
             </div>
           </div>
 
-          <!-- Quick Actions Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <!-- Simplified Quick Actions (keep essentials only) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <router-link
-              to="/settings/contact"
+              to="/orders"
               class="bg-white rounded-xl shadow-sm border border-slate-200 transition-all duration-200 hover:shadow-md hover:border-slate-300 group p-6 cursor-pointer"
             >
               <div class="flex items-start justify-between mb-3">
                 <svg class="w-6 h-6 text-slate-400 group-hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" />
                 </svg>
               </div>
-              <h3 class="font-semibold text-slate-900 mb-1">Contact Info</h3>
-              <p class="text-sm text-slate-600">Manage your contact details</p>
-            </router-link>
-
-            <router-link
-              to="/settings/bank"
-              class="bg-white rounded-xl shadow-sm border border-slate-200 transition-all duration-200 hover:shadow-md hover:border-slate-300 group p-6 cursor-pointer"
-            >
-              <div class="flex items-start justify-between mb-3">
-                <svg class="w-6 h-6 text-slate-400 group-hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 class="font-semibold text-slate-900 mb-1">Bank Account</h3>
-              <p class="text-sm text-slate-600">Register banking details</p>
-            </router-link>
-
-            <router-link
-              to="/settings/profile"
-              class="bg-white rounded-xl shadow-sm border border-slate-200 transition-all duration-200 hover:shadow-md hover:border-slate-300 group p-6 cursor-pointer"
-            >
-              <div class="flex items-start justify-between mb-3">
-                <svg class="w-6 h-6 text-slate-400 group-hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 class="font-semibold text-slate-900 mb-1">Profile</h3>
-              <p class="text-sm text-slate-600">View merchant profile</p>
+              <h3 class="font-semibold text-slate-900 mb-1">Orders</h3>
+              <p class="text-sm text-slate-600">Manage payment orders and checkout links</p>
             </router-link>
 
             <router-link
@@ -127,74 +101,32 @@
                 </svg>
               </div>
               <h3 class="font-semibold text-slate-900 mb-1">Create Order</h3>
-              <p class="text-sm text-slate-600">Generate payment links</p>
+              <p class="text-sm text-slate-600">Generate new checkout links</p>
+            </router-link>
+
+            <router-link
+              to="/settings"
+              class="bg-white rounded-xl shadow-sm border border-slate-200 transition-all duration-200 hover:shadow-md hover:border-slate-300 group p-6 cursor-pointer"
+            >
+              <div class="flex items-start justify-between mb-3">
+                <svg class="w-6 h-6 text-slate-400 group-hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" />
+                </svg>
+              </div>
+              <h3 class="font-semibold text-slate-900 mb-1">Settings</h3>
+              <p class="text-sm text-slate-600">Manage account settings</p>
             </router-link>
           </div>
 
-          <!-- Create Payment Order -->
-          <div class="bg-white rounded-xl shadow-sm border border-slate-200 transition-all duration-200 p-6">
-            <div class="flex items-start justify-between mb-6">
-              <div>
-                <h2 class="text-xl font-semibold text-slate-900">Create Payment Order</h2>
-                <p class="text-sm text-slate-600 mt-1">Create an order and share the checkout link with your customer</p>
-              </div>
-              <span class="badge bg-indigo-100 text-indigo-800">New</span>
+          <!-- Compact Order Card (links to full create page) -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 transition-all duration-200 p-6 flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-semibold text-slate-900">Create Payment Order</h2>
+              <p class="text-sm text-slate-600 mt-1">Quick access to create new checkout links or view all orders</p>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1.5">Amount</label>
-                <input
-                  v-model.number="orderForm.amount"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-900"
-                  placeholder="99.99"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1.5">Currency</label>
-                <select v-model="orderForm.currency" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-900">
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="COP">COP</option>
-                  <option value="MXN">MXN</option>
-                </select>
-              </div>
-
-              <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-slate-700 mb-1.5">Description</label>
-                <input
-                  v-model="orderForm.description"
-                  type="text"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-900"
-                  placeholder="Order #12345"
-                />
-              </div>
-            </div>
-
-            <p v-if="orderError" class="mt-4 text-sm text-red-700">{{ orderError }}</p>
-
-            <div class="mt-5 flex flex-wrap items-center gap-3">
-              <button
-                @click="createOrderFromDashboard"
-                :disabled="creatingOrder"
-                class="px-4 py-2 rounded-lg font-medium transition-all duration-200 bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {{ creatingOrder ? 'Creating...' : 'Create Order' }}
-              </button>
-              <router-link to="/create-order" class="text-sm text-indigo-700 hover:text-indigo-900">Open full order page</router-link>
-            </div>
-
-            <div v-if="createdOrderId" class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-              <p class="text-sm font-semibold text-emerald-900">Order created successfully</p>
-              <p class="mt-2 text-xs text-emerald-800">ID: <span class="font-mono">{{ createdOrderId }}</span></p>
-              <div class="mt-3 flex gap-2">
-                <input :value="createdOrderLink" readonly class="w-full px-3 py-2 rounded-lg border border-emerald-200 bg-white text-sm text-slate-800 font-mono" />
-                <button @click="copyDashboardLink" class="px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700">{{ linkCopied ? 'Copied' : 'Copy' }}</button>
-              </div>
+            <div class="flex items-center gap-3">
+              <router-link to="/create-order" class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Create</router-link>
+              <router-link to="/orders" class="px-4 py-2 rounded-lg border bg-white">Orders</router-link>
             </div>
           </div>
 
@@ -251,56 +183,7 @@
             </div>
           </div>
 
-          <!-- Configuration Cards -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="card p-6 border-l-4 border-blue-500">
-              <h3 class="font-semibold text-slate-900 mb-4 flex items-center">
-                <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Contact Information
-              </h3>
-              <div class="space-y-2">
-                <div v-if="merchantStore.current.contact_name" class="text-sm">
-                  <span class="text-slate-600">Name:</span>
-                  <span class="font-medium text-slate-900 ml-2">{{ merchantStore.current.contact_name }}</span>
-                </div>
-                <div v-if="merchantStore.current.contact_email" class="text-sm">
-                  <span class="text-slate-600">Email:</span>
-                  <span class="font-medium text-slate-900 ml-2">{{ merchantStore.current.contact_email }}</span>
-                </div>
-                <div v-if="!merchantStore.current.contact_name && !merchantStore.current.contact_email" class="text-sm text-slate-500 italic">
-                  No contact information configured
-                </div>
-              </div>
-            </div>
-
-            <div class="card p-6 border-l-4 border-emerald-500">
-              <h3 class="font-semibold text-slate-900 mb-4 flex items-center">
-                <svg class="w-5 h-5 text-emerald-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Bank Account Status
-              </h3>
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm text-slate-600">Status</p>
-                  <p class="text-lg font-semibold text-slate-900 mt-1">
-                    {{ merchantStore.hasBankAccount ? '✓ Configured' : 'Not configured' }}
-                  </p>
-                </div>
-                <svg
-                  v-if="merchantStore.hasBankAccount"
-                  class="w-8 h-8 text-emerald-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
+          <!-- (Configuration cards removed to reduce visual noise) -->
 
           <!-- Account Management -->
           <div class="bg-white rounded-xl shadow-sm border border-slate-200 transition-all duration-200 p-6">
