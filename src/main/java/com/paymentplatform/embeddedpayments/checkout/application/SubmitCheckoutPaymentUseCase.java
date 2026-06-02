@@ -91,13 +91,17 @@ public class SubmitCheckoutPaymentUseCase {
                 intent.getCurrency()
         );
 
-        // 7. Create transaction
+        // 7. Create transaction with customer association
         PaymentTransaction transaction = new PaymentTransaction(
                 UUID.randomUUID(),
                 paymentIntentId,
                 intent.getAmount(),
                 intent.getCurrency(),
-                "PENDING"
+                "PENDING",
+                java.time.Instant.now(),
+                java.time.Instant.now(),
+                null,
+                customerId  // Associate customer with transaction
         );
 
         // 8. Update statuses based on processor result

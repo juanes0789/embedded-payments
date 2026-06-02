@@ -37,11 +37,14 @@ public class PaymentTransaction {
     @Column(name = "reason_code")
     private String reasonCode;
 
+    @Column(name = "customer_id")
+    private UUID customerId;
+
     protected PaymentTransaction() {
     }
 
     public PaymentTransaction(UUID id, UUID paymentIntentId, BigDecimal amount, String currency, String status) {
-        this(id, paymentIntentId, amount, currency, status, Instant.now(), Instant.now(), null);
+        this(id, paymentIntentId, amount, currency, status, Instant.now(), Instant.now(), null, null);
     }
 
     public PaymentTransaction(UUID id,
@@ -51,7 +54,7 @@ public class PaymentTransaction {
                               String status,
                               Instant createdAt,
                               Instant updatedAt) {
-        this(id, paymentIntentId, amount, currency, status, createdAt, updatedAt, null);
+        this(id, paymentIntentId, amount, currency, status, createdAt, updatedAt, null, null);
     }
 
     public PaymentTransaction(UUID id,
@@ -62,6 +65,18 @@ public class PaymentTransaction {
                               Instant createdAt,
                               Instant updatedAt,
                               String reasonCode) {
+        this(id, paymentIntentId, amount, currency, status, createdAt, updatedAt, reasonCode, null);
+    }
+
+    public PaymentTransaction(UUID id,
+                              UUID paymentIntentId,
+                              BigDecimal amount,
+                              String currency,
+                              String status,
+                              Instant createdAt,
+                              Instant updatedAt,
+                              String reasonCode,
+                              UUID customerId) {
         this.id = id;
         this.paymentIntentId = paymentIntentId;
         this.amount = amount;
@@ -70,6 +85,7 @@ public class PaymentTransaction {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.reasonCode = reasonCode;
+        this.customerId = customerId;
     }
 
     public UUID getId() {
@@ -102,6 +118,14 @@ public class PaymentTransaction {
 
     public String getReasonCode() {
         return reasonCode;
+    }
+
+    public UUID getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(UUID customerId) {
+        this.customerId = customerId;
     }
 
     public void markSucceeded() {
