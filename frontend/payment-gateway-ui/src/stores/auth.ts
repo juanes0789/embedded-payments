@@ -56,7 +56,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function logout(skipApiCall = false) {
+  function logout(skipApiCall = true) {
     token.value = null
     user.value = null
     error.value = null

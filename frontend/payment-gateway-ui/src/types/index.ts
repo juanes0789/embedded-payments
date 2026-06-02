@@ -67,13 +67,24 @@ export interface ChangeMerchantStatusRequest {
 export interface Transaction {
   id: string;
   merchantId: string;
+  paymentIntentId: string;
   amount: number;
   currency: string;
-  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
-  customerEmail: string;
+  status: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELED' | 'REFUNDED' | 'COMPLETED' | 'REFUND_PENDING';
+  customerEmail?: string;
   customerName?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  reasonCode?: string;
+  statusHistory?: Array<{
+    id: string;
+    previousStatus: string | null;
+    newStatus: string;
+    changedBy: string;
+    reasonCode: string | null;
+    createdAt: string;
+  }>;
+  paymentMethod?: string;
+  createdAt: Date | string;
+  updatedAt?: Date | string;
 }
 
 export interface Refund {

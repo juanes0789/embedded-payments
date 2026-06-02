@@ -1,0 +1,246 @@
+
+
+@startuml
+
+title Embedded Payments Platform - ER Diagram (current schema)
+
+hide circle
+skinparam shadowing false
+skinparam linetype ortho
+skinparam defaultTextAlignment left
+skinparam entity {
+  BackgroundColor White
+  BorderColor #2F4F4F
+  FontColor #1F1F1F
+}
+skinparam stereotypeCBackgroundColor #EEF5FF
+skinparam stereotypeCBorderColor #6B8EAF
+
+legend right
+  == Convenciones ==
+  <<PK>> clave primaria
+  <<FK>> clave foránea
+  <<UQ>> restricción única
+  <<NN>> not null
+  <<TECH>> tabla técnica de compatibilidad
+  Los campos reflejan el estado actual real de `db/`.
+endlegend
+
+enum merchant_status {
+  INACTIVE
+  ACTIVE
+  SUSPENDED
+  DISABLED
+}
+
+enum payment_status {
+  CREATED
+  REQUIRES_PAYMENT
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELED
+}
+
+enum transaction_status {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum refund_status {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+entity "users" as users {
+  * id : UUID <<PK>>
+  --
+  email : VARCHAR(255) <<UQ>> <<NN>>
+  password_hash : TEXT <<NN>>
+  status : VARCHAR(50)
+  created_at : TIMESTAMP <<NN>>
+}
+
+entity "roles" as roles {
+  * id : SERIAL <<PK>>
+  --
+  name : VARCHAR(100) <<UQ>> <<NN>>
+  description : TEXT
+}
+
+entity "permissions" as permissions {
+  * id : SERIAL <<PK>>
+  --
+  name : VARCHAR(100) <<UQ>> <<NN>>
+  description : TEXT
+}
+
+entity "user_roles" as user_roles {
+  * user_id : UUID <<PK,FK>>
+  * role_id : INT <<PK,FK>>
+}
+
+entity "role_permissions" as role_permissions {
+  * role_id : INT <<PK,FK>>
+  * permission_id : INT <<PK,FK>>
+}
+
+entity "merchants" as merchants {
+  * id : UUID <<PK>>
+  --
+  name : VARCHAR(255) <<NN>>
+  email : VARCHAR(255) <<UQ>> <<NN>>
+  password : VARCHAR(255) <<NN>>
+  contact_name : VARCHAR(255)
+  contact_email : VARCHAR(255)
+  status : merchant_status <<NN>>
+  bank_account_encrypted : TEXT
+  bank_account_hash : VARCHAR(255)
+  encrypted_bank_data : BYTEA
+  previous_status : merchant_status
+  created_at : TIMESTAMP <<NN>>
+  updated_at : TIMESTAMP
+}
+
+entity "merchant_status_history" as merchant_status_history {
+  * id : UUID <<PK>>
+  --
+  merchant_id : UUID <<FK,NN>>
+  previous_status : merchant_status <<NN>>
+  new_status : merchant_status <<NN>>
+  changed_by : VARCHAR(255) <<NN>>
+  reason : TEXT
+  created_at : TIMESTAMP <<NN>>
+}
+
+entity "merchant_audit_detail" as merchant_audit_detail {
+  * id : UUID <<PK>>
+  --
+  merchant_id : UUID <<FK,NN>>
+  event_type : VARCHAR(100) <<NN>>
+  field_name : VARCHAR(100) <<NN>>
+  old_value : TEXT
+  new_value : TEXT
+  changed_by : VARCHAR(255) <<NN>>
+  created_at : TIMESTAMP <<NN>>
+}
+
+entity "api_keys" as api_keys {
+  * id : UUID <<PK>>
+  --
+  merchant_id : UUID <<FK,NN>>
+  key_hash : TEXT <<NN>>
+  status : VARCHAR(50)
+  created_at : TIMESTAMP <<NN>>
+}
+
+entity "customers" as customers {
+  * id : UUID <<PK>>
+  --
+  merchant_id : UUID <<FK,NN>>
+  email : VARCHAR(255)
+  name : VARCHAR(255)
+  created_at : TIMESTAMP <<NN>>
+}
+
+entity "payment_intents" as payment_intents {
+  * id : UUID <<PK>>
+  --
+  merchant_id : UUID <<FK,NN>>
+  customer_id : UUID <<FK>>
+  amount : NUMERIC(12,2) <<NN>>
+  currency : VARCHAR(10) <<NN>>
+  status : payment_status <<NN>>
+  description : TEXT
+  created_at : TIMESTAMP <<NN>>
+}
+
+entity "transactions" as transactions {
+  * id : UUID <<PK>>
+  --
+  payment_intent_id : UUID <<FK,NN>>
+  amount : NUMERIC(12,2) <<NN>>
+  currency : VARCHAR(10)
+  status : transaction_status <<NN>>
+  payment_method : VARCHAR(100)
+  created_at : TIMESTAMP <<NN>>
+}
+
+entity "refunds" as refunds {
+  * id : UUID <<PK>>
+  --
+  transaction_id : UUID <<FK,NN>>
+  amount : NUMERIC(12,2) <<NN>>
+  status : refund_status <<NN>>
+  reason : TEXT
+  created_at : TIMESTAMP <<NN>>
+}
+
+entity "audit_logs" as audit_logs {
+  * id : UUID <<PK>>
+  --
+  user_id : UUID <<FK>>
+  action : VARCHAR(255)
+  entity_type : VARCHAR(100)
+  entity_id : UUID
+  ip_address : VARCHAR(100)
+  created_at : TIMESTAMP <<NN>>
+}
+
+entity "auth_session" as auth_session <<TECH>> {
+  * id : UUID <<PK>>
+  --
+  merchant_id : UUID <<NN>>
+  token : VARCHAR(1024) <<NN>>
+  expires_at : TIMESTAMP <<NN>>
+  revoked : BOOLEAN <<NN>>
+  created_at : TIMESTAMP <<NN>>
+  updated_at : TIMESTAMP <<NN>>
+}
+
+entity "audit_event" as audit_event <<TECH>> {
+  * id : UUID <<PK>>
+  --
+  event_type : VARCHAR(255) <<NN>>
+  entity_type : VARCHAR(255) <<NN>>
+  entity_id : UUID <<NN>>
+  origin : VARCHAR(255) <<NN>>
+  actor : VARCHAR(255) <<NN>>
+  happened_at : TIMESTAMP <<NN>>
+}
+
+' Relaciones reales por FK
+users ||--o{ user_roles : user_id
+roles ||--o{ user_roles : role_id
+roles ||--o{ role_permissions : role_id
+permissions ||--o{ role_permissions : permission_id
+merchants ||--o{ merchant_status_history : merchant_id
+merchants ||--o{ merchant_audit_detail : merchant_id
+merchants ||--o{ api_keys : merchant_id
+merchants ||--o{ customers : merchant_id
+merchants ||--o{ payment_intents : merchant_id
+customers ||--o{ payment_intents : customer_id
+payment_intents ||--o{ transactions : payment_intent_id
+transactions ||--o{ refunds : transaction_id
+users ||--o{ audit_logs : user_id
+
+note right of auth_session
+  `merchant_id` existe en el esquema actual,
+  pero no tiene FOREIGN KEY declarada.
+end note
+
+note right of audit_event
+  Tabla técnica sin relaciones FK declaradas.
+  `entity_id` y `actor` son referencias lógicas.
+end note
+
+note bottom of merchants
+  La tabla `merchants` incluye los campos agregados por las migraciones
+  actuales: contacto, datos bancarios cifrados y `password`.
+  No existen tablas `merchant_contacts` ni `merchant_bank_accounts` en `db/`.
+end note
+
+@enduml
+

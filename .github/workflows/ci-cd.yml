@@ -105,13 +105,18 @@ jobs:
           --header 'content-type: application/json'
     
     - name: Wait for deployment
-      run: sleep 30
-    
+      run: sleep 150
+
+    - name: Debug deployment verification
+      run: |
+        curl -IvL https://embedded-payments-1.onrender.com/swagger-ui.html || true
+
     - name: Verify deployment
       run: |
         for i in {1..10}; do
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://embedded-payments-1.onrender.com/swagger-ui.html)
-          if [ $HTTP_CODE -eq 200 ]; then
+          HTTP_CODE=$(curl -L -s -o /dev/null -w "%{http_code}" https://embedded-payments-1.onrender.com/swagger-ui.html)
+          echo "Response code: $HTTP_CODE"
+          if [ "$HTTP_CODE" -eq 200 ]; then
             echo "✅ Deployment successful!"
             exit 0
           fi

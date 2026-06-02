@@ -2,6 +2,7 @@ package com.paymentplatform.embeddedpayments.auth.application;
 
 import com.paymentplatform.embeddedpayments.auth.domain.entity.UserAccount;
 import com.paymentplatform.embeddedpayments.auth.infrastructure.repository.UserAccountJpaRepository;
+import com.paymentplatform.embeddedpayments.merchant.domain.entity.Merchant;
 import com.paymentplatform.embeddedpayments.merchant.infrastructure.persistence.MerchantJpaRepository;
 import com.paymentplatform.embeddedpayments.shared.exception.DomainException;
 import com.paymentplatform.embeddedpayments.shared.security.JwtTokenService;
@@ -60,10 +61,16 @@ public class LoginMerchantUseCase {
         }
 
         String role = user.getPrimaryRole();
+        if ("ROLE_USER".equals(role)) {
+            boolean hasMerchantProfile = merchantRepository.findByEmail(normalizedEmail).isPresent();
+            if (hasMerchantProfile) {
+                role = "ROLE_MERCHANT";
+            }
+        }
         UUID merchantId = null;
-        if ("ROLE_ADMIN".equals(role)) {
+        if ("ROLE_ADMIN".equals(role) || "ROLE_MERCHANT".equals(role)) {
             merchantId = merchantRepository.findByEmail(normalizedEmail)
-                    .map(merchant -> merchant.getId())
+                    .map(Merchant::getId)
                     .orElse(null);
         }
 

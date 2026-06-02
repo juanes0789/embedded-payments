@@ -22,7 +22,13 @@ public class RefundDomainService {
             throw new DomainException("refund reason is required");
         }
 
-        return new Refund(UUID.randomUUID(), transactionId, amount, reason, "PENDING");
+        return new Refund(UUID.randomUUID(), transactionId, amount, reason, "COMPLETED");
+    }
+
+    public Refund createWithStatus(UUID transactionId, BigDecimal amount, String reason, String status) {
+        // reuse the same validations
+        Refund r = create(transactionId, amount, reason);
+        return new Refund(r.getId(), transactionId, amount, reason, status);
     }
 }
 

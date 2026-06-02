@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +19,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtTokenService jwtTokenService;
 
@@ -29,11 +33,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            log.debug("SecurityContext already contains authentication: {}",
+                    SecurityContextHolder.getContext().getAuthentication().getName());
             filterChain.doFilter(request, response);
             return;
         }
 
         String header = request.getHeader("Authorization");
+
+        if (header == null) {
+            log.debug("No Authorization header present on request {} {}", request.getMethod(), request.getRequestURI());
+        }
 
         if (header != null && header.startsWith("Bearer ")) {
                 String token = header.substring(7);
@@ -41,6 +51,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     String subject = jwtTokenService.extractSubject(token);
                     String role = jwtTokenService.extractRole(token);
                     var merchantId = jwtTokenService.extractMerchantId(token);
+
+                    log.info("Parsed JWT for request {} {} -> subject={}, role={}, merchantId={}",
+                            request.getMethod(), request.getRequestURI(), subject, role, merchantId);
+
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     subject,
@@ -54,9 +68,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     details.put("request", new WebAuthenticationDetailsSource().buildDetails(request));
                     authentication.setDetails(details);
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+                    log.debug("Authentication set for principal={} with authorities={}",
+                            subject, authentication.getAuthorities());
                 } catch (RuntimeException ex) {
+                    log.warn("Invalid JWT on request {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
                     SecurityContextHolder.clearContext();
                 }
+        } else if (header != null) {
+            log.debug("Authorization header present but does not start with Bearer: {}", header);
         }
 
         filterChain.doFilter(request, response);

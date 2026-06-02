@@ -39,7 +39,7 @@ $$;
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'transaction_status') THEN
-        CREATE TYPE transaction_status AS ENUM ('PENDING', 'SUCCEEDED', 'FAILED');
+        CREATE TYPE transaction_status AS ENUM ('PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED', 'REFUNDED');
     END IF;
 END
 $$;
@@ -170,7 +170,8 @@ CREATE TABLE IF NOT EXISTS payment_intents (
     currency VARCHAR(10) NOT NULL,
     status payment_status NOT NULL DEFAULT 'CREATED',
     description TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_payment_intents_merchant ON payment_intents(merchant_id);
@@ -183,7 +184,8 @@ CREATE TABLE IF NOT EXISTS transactions (
     currency VARCHAR(10),
     status transaction_status NOT NULL DEFAULT 'PENDING',
     payment_method VARCHAR(100),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_transactions_payment_intent ON transactions(payment_intent_id);
@@ -194,7 +196,8 @@ CREATE TABLE IF NOT EXISTS refunds (
     amount NUMERIC(12,2) NOT NULL CHECK (amount > 0),
     status refund_status NOT NULL DEFAULT 'PENDING',
     reason TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_refunds_transaction ON refunds(transaction_id);

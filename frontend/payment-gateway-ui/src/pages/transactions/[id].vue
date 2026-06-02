@@ -66,7 +66,23 @@
             <div>
               <p class="text-sm text-gray-600 mb-1">Last Updated</p>
               <p class="text-lg font-semibold text-gray-900">
-                {{ new Date(transaction.updatedAt).toLocaleDateString() }}
+                {{ transaction.updatedAt ? new Date(transaction.updatedAt).toLocaleDateString() : 'N/A' }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rejection Reason Alert (HU 4.2) -->
+        <div v-if="transaction.status === 'FAILED' && transaction.reasonCode" class="bg-red-50 border-l-4 border-red-500 rounded-r-lg p-6">
+          <div class="flex items-start">
+            <svg class="w-6 h-6 text-red-500 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+              <p class="font-bold text-red-900">Transaction Failed / Rejected</p>
+              <p class="text-sm text-red-800 mt-1">
+                The banking processor rejected this transaction. Reason Code:
+                <span class="font-mono bg-red-100 text-red-900 px-2 py-0.5 rounded text-xs ml-1">{{ transaction.reasonCode }}</span>
               </p>
             </div>
           </div>
@@ -96,6 +112,39 @@
           >
             Process Refund
           </button>
+        </div>
+
+        <!-- State Timeline (HU 4.1) -->
+        <div v-if="transaction.statusHistory && transaction.statusHistory.length" class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold text-gray-900 mb-6">Transaction Timeline (Audit)</h2>
+          <div class="relative border-l-2 border-gray-200 ml-4 pl-6 space-y-6">
+            <div
+              v-for="event in transaction.statusHistory"
+              :key="event.id"
+              class="relative"
+            >
+              <!-- Timeline Bullet -->
+              <span class="absolute -left-[33px] top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-white border-2 border-indigo-600 ring-4 ring-white">
+                <span class="h-1.5 w-1.5 rounded-full bg-indigo-600"></span>
+              </span>
+              <div>
+                <div class="flex items-center gap-3">
+                  <span class="font-semibold text-gray-900">
+                    {{ event.previousStatus ? event.previousStatus : 'CREATED' }} → {{ event.newStatus }}
+                  </span>
+                  <span class="text-xs font-semibold px-2.5 py-0.5 rounded bg-gray-100 text-gray-800">
+                    by {{ event.changedBy }}
+                  </span>
+                </div>
+                <p class="text-xs text-gray-600 mt-1">
+                  {{ new Date(event.createdAt).toLocaleString() }}
+                </p>
+                <p v-if="event.reasonCode" class="text-xs text-red-600 mt-1 font-medium">
+                  Reason: {{ event.reasonCode }}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Refund Dialog -->

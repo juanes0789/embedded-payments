@@ -2,10 +2,14 @@ import api from './api'
 import { Transaction, Refund, PaginatedResponse } from '@/types'
 
 export const transactionService = {
-  list: async (page = 1, pageSize = 10): Promise<PaginatedResponse<Transaction>> => {
+  list: async (page = 1, pageSize = 10, status?: string): Promise<PaginatedResponse<Transaction>> => {
+    const params: Record<string, any> = { page, pageSize }
+    if (status && status !== 'ALL') {
+      params.status = status
+    }
     const response = await api.get<PaginatedResponse<Transaction>>(
       '/api/v1/transactions',
-      { params: { page, pageSize } }
+      { params }
     )
     return response.data
   },

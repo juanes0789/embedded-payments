@@ -64,6 +64,20 @@
         </div>
       </div>
 
+              <!-- API Key (development/testing) -->
+              <div class="border-t pt-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">API Key (desarrollo)</h3>
+                <div class="space-y-3">
+                  <p v-if="apiKeySaved" class="text-sm text-gray-700">API Key configurada: <span class="font-mono">{{ maskedApiKey }}</span></p>
+                  <div class="flex items-center gap-2">
+                    <input v-model="apiKey" type="text" placeholder="Pegar API Key (epk_...)" class="border rounded px-3 py-2 w-full" />
+                    <button @click="saveApiKey" class="px-3 py-2 bg-blue-600 text-white rounded">Guardar</button>
+                    <button @click="removeApiKey" class="px-3 py-2 bg-red-600 text-white rounded">Borrar</button>
+                  </div>
+                  <p class="text-xs text-gray-500">Esta clave se guarda en localStorage y sirve para llamadas a /payments y /transactions (solo desarrollo).</p>
+                </div>
+              </div>
+
       <!-- Dates -->
       <div class="border-t pt-6 text-sm text-gray-600">
         <p>Created: {{ new Date(merchantStore.current.created_at || merchantStore.current.createdAt!).toLocaleDateString() }}</p>
@@ -75,7 +89,46 @@
 
 <script setup lang="ts">
 import { useMerchantStore } from '@/stores/merchant'
+import { ref, computed, onMounted } from 'vue'
+import { useNotificationStore } from '@/stores/notifications'
 
 const merchantStore = useMerchantStore()
+const notificationStore = useNotificationStore()
+
+const apiKey = ref<string>('')
+const apiKeySaved = computed(() => !!localStorage.getItem('apiKey'))
+
+const maskedApiKey = computed(() => {
+  const k = localStorage.getItem('apiKey') || ''
+  if (!k) return ''
+  return k.length > 8 ? `${k.substring(0, 6)}...${k.substring(k.length - 4)}` : k
+})
+
+function saveApiKey() {
+  try {
+    if (!apiKey.value) {
+      notificationStore.error('Ingresa una API Key válida')
+      return
+    }
+    localStorage.setItem('apiKey', apiKey.value.trim())
+    apiKey.value = ''
+    notificationStore.success('API Key guardada en localStorage')
+  } catch (e) {
+    notificationStore.error('Error al guardar API Key')
+  }
+}
+
+function removeApiKey() {
+  try {
+    localStorage.removeItem('apiKey')
+    notificationStore.success('API Key eliminada')
+  } catch (e) {
+    notificationStore.error('Error al borrar API Key')
+  }
+}
+
+onMounted(() => {
+  apiKey.value = ''
+})
 </script>
 

@@ -43,6 +43,8 @@ El servicio está desplegado en Render:
 - ✅ API REST completamente documentada
 - ✅ Notificaciones global
 - ✅ Error handling robusto
+- ✅ **Nuevo**: Embedded checkout flow (public payment links)
+- ✅ **Nuevo**: Mock payment processor para testing
 
 ## 🏗️ Arquitectura
 
@@ -85,8 +87,12 @@ com.paymentplatform.embeddedpayments
 ### Pagos
 - `POST /api/v1/payments/intents` - Crear payment intent
 - `POST /api/v1/transactions` - Crear transacción (requiere X-API-Key)
-- `GET /api/v1/transactions` - Listar transacciones
-- `GET /api/v1/transactions/{id}` - Obtener transacción
+- `GET /api/v1/transactions` - Listar transacciones (protegido)
+- `GET /api/v1/transactions/{id}` - Obtener transacción (protegido)
+
+### Embedded Checkout (NUEVO)
+- `GET /checkout/intents/{id}` - Obtener intent de pago (público)
+- `POST /checkout/submit` - Procesar pago (público)
 
 ### Reembolsos
 - `POST /api/v1/refunds` - Crear reembolso
@@ -108,6 +114,28 @@ Authorization: Bearer <jwt_token>
 Para merchant APIs: usar header X-API-Key (obtenido al registrar comercio)
 ```http
 X-API-Key: epk_<key-id>_<secret>
+```
+
+## 🛒 Embedded Checkout Flow (NUEVO)
+
+Flujo completo de pago sin redirecciones externas:
+
+1. **Merchant**: Crea payment intent con monto específico
+2. **Customer**: Accede a link de pago (public)
+3. **Customer**: Ingresa email y nombre
+4. **Transaction**: Se procesa automáticamente
+5. **Dashboard**: Merchant ve la transacción
+
+### Endpoints
+- `GET /checkout/intents/{id}` - Obtener datos de pago (público)
+- `POST /checkout/submit` - Procesar pago (público)
+
+### Documentación Completa
+Ver: **docs/CHECKOUT_FLOW.md** y **docs/QUICK_START.md**
+
+**Testing Local**:
+```bash
+./scripts/test_checkout_flow.sh
 ```
 
 ## 🧪 Testing

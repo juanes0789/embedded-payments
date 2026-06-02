@@ -1,5 +1,6 @@
 package com.paymentplatform.embeddedpayments.transaction.domain.entity;
 
+import com.paymentplatform.embeddedpayments.shared.exception.DomainException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -21,21 +22,54 @@ public class PaymentTransaction {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
+    @Column(nullable = false, length = 10)
+    private String currency;
+
     @Column(nullable = false)
     private String status;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
+    @Column(name = "reason_code")
+    private String reasonCode;
 
     protected PaymentTransaction() {
     }
 
-    public PaymentTransaction(UUID id, UUID paymentIntentId, BigDecimal amount, String status, Instant createdAt) {
+    public PaymentTransaction(UUID id, UUID paymentIntentId, BigDecimal amount, String currency, String status) {
+        this(id, paymentIntentId, amount, currency, status, Instant.now(), Instant.now(), null);
+    }
+
+    public PaymentTransaction(UUID id,
+                              UUID paymentIntentId,
+                              BigDecimal amount,
+                              String currency,
+                              String status,
+                              Instant createdAt,
+                              Instant updatedAt) {
+        this(id, paymentIntentId, amount, currency, status, createdAt, updatedAt, null);
+    }
+
+    public PaymentTransaction(UUID id,
+                              UUID paymentIntentId,
+                              BigDecimal amount,
+                              String currency,
+                              String status,
+                              Instant createdAt,
+                              Instant updatedAt,
+                              String reasonCode) {
         this.id = id;
         this.paymentIntentId = paymentIntentId;
         this.amount = amount;
+        this.currency = currency != null ? currency : "USD";
         this.status = status;
         this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.reasonCode = reasonCode;
     }
 
     public UUID getId() {
@@ -50,6 +84,10 @@ public class PaymentTransaction {
         return amount;
     }
 
+    public String getCurrency() {
+        return currency;
+    }
+
     public String getStatus() {
         return status;
     }
@@ -57,5 +95,65 @@ public class PaymentTransaction {
     public Instant getCreatedAt() {
         return createdAt;
     }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public String getReasonCode() {
+        return reasonCode;
+    }
+
+    public void markSucceeded() {
+        changeStatus("SUCCEEDED");
+    }
+
+    public void markFailed() {
+        changeStatus("FAILED");
+    }
+
+    public void cancel() {
+        changeStatus("CANCELED");
+    }
+
+    public void markRefunded() {
+        changeStatus("REFUNDED");
+    }
+
+    public void requestRefund() {
+        changeStatus("REFUND_PENDING");
+    }
+
+    public void cancelRefundRequest() {
+        changeStatus("SUCCEEDED");
+    }
+
+    public boolean isTerminal() {
+        return "SUCCEEDED".equalsIgnoreCase(status)
+                || "FAILED".equalsIgnoreCase(status)
+                || "CANCELED".equalsIgnoreCase(status)
+                || "REFUNDED".equalsIgnoreCase(status);
+    }
+
+    private void changeStatus(String targetStatus) {
+        if (!isValidTransition(this.status, targetStatus)) {
+            throw new DomainException("Invalid transaction transition from " + this.status + " to " + targetStatus);
+        }
+
+        this.status = targetStatus;
+        this.updatedAt = Instant.now();
+    }
+
+    private boolean isValidTransition(String currentStatus, String targetStatus) {
+        return switch (currentStatus == null ? "" : currentStatus.toUpperCase()) {
+            case "PENDING" -> "SUCCEEDED".equals(targetStatus) || "FAILED".equals(targetStatus)
+                    || "CANCELED".equals(targetStatus) || "REFUNDED".equals(targetStatus);
+            case "SUCCEEDED" -> "REFUNDED".equals(targetStatus) || "CANCELED".equals(targetStatus) || "REFUND_PENDING".equals(targetStatus);
+            case "REFUND_PENDING" -> "REFUNDED".equals(targetStatus) || "SUCCEEDED".equals(targetStatus) || "CANCELED".equals(targetStatus);
+            case "FAILED", "CANCELED", "REFUNDED" -> false;
+            default -> false;
+        };
+    }
 }
+
 
