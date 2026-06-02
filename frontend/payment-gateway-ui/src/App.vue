@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-slate-50">
-    <div v-if="isLoading" class="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 to-slate-800">
+    <div v-if="showLoading" class="flex items-center justify-center h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-800">
       <div class="space-y-4 text-center">
         <svg class="animate-spin h-12 w-12 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -16,11 +16,14 @@
 
 <script setup lang="ts">
 import { onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Notifications from '@/components/shared/Notifications.vue'
 
 const authStore = useAuthStore()
+const route = useRoute()
 const isLoading = computed(() => authStore.isLoading)
+const showLoading = computed(() => isLoading.value && route.meta.requiresAuth !== false)
 
 onMounted(() => {
   authStore.initializeSession()

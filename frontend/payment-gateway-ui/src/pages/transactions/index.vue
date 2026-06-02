@@ -12,8 +12,8 @@
           <table class="w-full">
             <thead class="bg-gray-50">
               <tr>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Customer</th>
+                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Transaction ID</th>
+                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Payment Intent</th>
                 <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Amount</th>
                 <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
                 <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Date</th>
@@ -26,12 +26,12 @@
                   No transactions found
                 </td>
               </tr>
-              <tr v-for="transaction in transactions" :key="transaction.id" class="hover:bg-gray-50">
-                <td class="px-6 py-4 text-sm text-gray-900">
+               <tr v-for="transaction in transactions" :key="transaction.id" class="hover:bg-gray-50">
+                <td class="px-6 py-4 text-sm text-gray-900 font-mono">
                   {{ transaction.id.substring(0, 8) }}...
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-900">
-                  {{ transaction.customerEmail }}
+                <td class="px-6 py-4 text-sm text-gray-600 font-mono">
+                  {{ transaction.paymentIntentId.substring(0, 8) }}...
                 </td>
                 <td class="px-6 py-4 text-sm font-semibold text-gray-900">
                   {{ transaction.currency }} {{ transaction.amount.toFixed(2) }}
@@ -40,11 +40,13 @@
                   <span
                     :class="[
                       'px-3 py-1 rounded-full text-xs font-semibold',
-                      transaction.status === 'COMPLETED'
+                      transaction.status === 'SUCCEEDED'
                         ? 'bg-green-100 text-green-800'
                         : transaction.status === 'PENDING'
                         ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800',
+                        : transaction.status === 'FAILED'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-gray-100 text-gray-800',
                     ]"
                   >
                     {{ transaction.status }}

@@ -16,13 +16,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 
 @Configuration
-@EnableMethodSecurity(prePostEnabled = true)
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    ApiKeyAuthenticationFilter apiKeyAuthenticationFilter,
-                                                   JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+                                                   JwtAuthenticationFilter jwtAuthenticationFilter) {
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
@@ -31,6 +31,9 @@ public class SecurityConfig {
                         // Swagger
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         
+                        // Public checkout (sin autenticación requerida)
+                        .requestMatchers("/checkout/**").permitAll()
+
                         // Auth (público)
                         .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh", "/api/v1/auth/token").permitAll()
                         .requestMatchers("/api/v1/auth/me", "/api/v1/auth/logout").authenticated()
@@ -43,11 +46,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/merchants/*/deactivate").hasRole("ADMIN")
                         .requestMatchers("/api/v1/merchants/*").hasAnyRole("ADMIN", "MERCHANT")
 
-                        // Embedded checkout / processing (API key)
+                        // Administración de pagos (JWT de merchant/admin)
+                        .requestMatchers("/api/v1/admin/payments/**").hasAnyRole("ADMIN", "MERCHANT")
+
+                        // Embedded checkout / processing
                         .requestMatchers("/api/v1/payments/**").hasRole("API_CLIENT")
-                        .requestMatchers("/api/v1/transactions/**").hasRole("API_CLIENT")
-                        .requestMatchers("/api/v1/refunds/**").hasRole("API_CLIENT")
-                        
+                        .requestMatchers("/api/v1/transactions/**").hasAnyRole("API_CLIENT", "MERCHANT", "USER")
+                        .requestMatchers("/api/v1/refunds/**").hasAnyRole("API_CLIENT", "MERCHANT", "USER")
+
                         // Otros
                         .anyRequest().authenticated()
                 )
@@ -59,7 +65,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:5174", "http://localhost:3000"));
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "https://*.onrender.com",
+                "https://embedded-payments-1.onrender.com"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "X-API-Key"));
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));

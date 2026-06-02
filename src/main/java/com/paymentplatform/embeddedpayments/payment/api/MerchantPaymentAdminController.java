@@ -1,6 +1,7 @@
 package com.paymentplatform.embeddedpayments.payment.api;
 
 import com.paymentplatform.embeddedpayments.payment.application.CancelPaymentIntentUseCase;
+import com.paymentplatform.embeddedpayments.payment.application.CreatePaymentIntentUseCase;
 import com.paymentplatform.embeddedpayments.shared.security.AuthenticationService;
 import com.paymentplatform.embeddedpayments.refund.application.CreateRefundUseCase;
 import com.paymentplatform.embeddedpayments.transaction.application.AuthorizeTransactionUseCase;
@@ -30,21 +31,36 @@ import org.springframework.web.bind.annotation.RestController;
 public class MerchantPaymentAdminController {
 
     private final AuthenticationService authenticationService;
+    private final CreatePaymentIntentUseCase createPaymentIntentUseCase;
     private final CancelPaymentIntentUseCase cancelPaymentIntentUseCase;
     private final AuthorizeTransactionUseCase authorizeTransactionUseCase;
     private final UpdateTransactionStatusUseCase updateTransactionStatusUseCase;
     private final CreateRefundUseCase createRefundUseCase;
 
     public MerchantPaymentAdminController(AuthenticationService authenticationService,
+                                          CreatePaymentIntentUseCase createPaymentIntentUseCase,
                                           CancelPaymentIntentUseCase cancelPaymentIntentUseCase,
                                           AuthorizeTransactionUseCase authorizeTransactionUseCase,
                                           UpdateTransactionStatusUseCase updateTransactionStatusUseCase,
                                           CreateRefundUseCase createRefundUseCase) {
         this.authenticationService = authenticationService;
+        this.createPaymentIntentUseCase = createPaymentIntentUseCase;
         this.cancelPaymentIntentUseCase = cancelPaymentIntentUseCase;
         this.authorizeTransactionUseCase = authorizeTransactionUseCase;
         this.updateTransactionStatusUseCase = updateTransactionStatusUseCase;
         this.createRefundUseCase = createRefundUseCase;
+    }
+
+    @PostMapping("/intents")
+    public ResponseEntity<PaymentIntentResponse> createIntent(@Valid @RequestBody CreatePaymentIntentRequest request) {
+        UUID merchantId = resolveMerchantId();
+        PaymentIntent intent = createPaymentIntentUseCase.execute(
+                merchantId,
+                request.amount(),
+                request.currency(),
+                request.description()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(intent));
     }
 
     @PatchMapping("/intents/{id}/cancel")
@@ -97,6 +113,7 @@ public class MerchantPaymentAdminController {
                 intent.getAmount(),
                 intent.getCurrency(),
                 intent.getStatus(),
+                intent.getDescription(),
                 intent.getCreatedAt(),
                 intent.getUpdatedAt()
         );
@@ -135,11 +152,17 @@ public class MerchantPaymentAdminController {
                                       @NotBlank String reason) {
     }
 
+    public record CreatePaymentIntentRequest(@NotNull @DecimalMin(value = "0.01") BigDecimal amount,
+                                             @NotBlank String currency,
+                                             String description) {
+    }
+
     public record PaymentIntentResponse(UUID id,
                                         UUID merchantId,
                                         BigDecimal amount,
                                         String currency,
                                         String status,
+                                        String description,
                                         Instant createdAt,
                                         Instant updatedAt) {
     }

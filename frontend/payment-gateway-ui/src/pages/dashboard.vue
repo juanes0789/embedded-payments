@@ -64,7 +64,7 @@
           </div>
 
           <!-- Quick Actions Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <router-link
               to="/settings/contact"
               class="bg-white rounded-xl shadow-sm border border-slate-200 transition-all duration-200 hover:shadow-md hover:border-slate-300 group p-6 cursor-pointer"
@@ -116,6 +116,139 @@
               <h3 class="font-semibold text-slate-900 mb-1">Transactions</h3>
               <p class="text-sm text-slate-600">View payment history</p>
             </router-link>
+
+            <router-link
+              to="/create-order"
+              class="bg-white rounded-xl shadow-sm border border-slate-200 transition-all duration-200 hover:shadow-md hover:border-slate-300 group p-6 cursor-pointer"
+            >
+              <div class="flex items-start justify-between mb-3">
+                <svg class="w-6 h-6 text-slate-400 group-hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <h3 class="font-semibold text-slate-900 mb-1">Create Order</h3>
+              <p class="text-sm text-slate-600">Generate payment links</p>
+            </router-link>
+          </div>
+
+          <!-- Create Payment Order -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 transition-all duration-200 p-6">
+            <div class="flex items-start justify-between mb-6">
+              <div>
+                <h2 class="text-xl font-semibold text-slate-900">Create Payment Order</h2>
+                <p class="text-sm text-slate-600 mt-1">Create an order and share the checkout link with your customer</p>
+              </div>
+              <span class="badge bg-indigo-100 text-indigo-800">New</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Amount</label>
+                <input
+                  v-model.number="orderForm.amount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-900"
+                  placeholder="99.99"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Currency</label>
+                <select v-model="orderForm.currency" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-900">
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="COP">COP</option>
+                  <option value="MXN">MXN</option>
+                </select>
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Description</label>
+                <input
+                  v-model="orderForm.description"
+                  type="text"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-900"
+                  placeholder="Order #12345"
+                />
+              </div>
+            </div>
+
+            <p v-if="orderError" class="mt-4 text-sm text-red-700">{{ orderError }}</p>
+
+            <div class="mt-5 flex flex-wrap items-center gap-3">
+              <button
+                @click="createOrderFromDashboard"
+                :disabled="creatingOrder"
+                class="px-4 py-2 rounded-lg font-medium transition-all duration-200 bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{ creatingOrder ? 'Creating...' : 'Create Order' }}
+              </button>
+              <router-link to="/create-order" class="text-sm text-indigo-700 hover:text-indigo-900">Open full order page</router-link>
+            </div>
+
+            <div v-if="createdOrderId" class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <p class="text-sm font-semibold text-emerald-900">Order created successfully</p>
+              <p class="mt-2 text-xs text-emerald-800">ID: <span class="font-mono">{{ createdOrderId }}</span></p>
+              <div class="mt-3 flex gap-2">
+                <input :value="createdOrderLink" readonly class="w-full px-3 py-2 rounded-lg border border-emerald-200 bg-white text-sm text-slate-800 font-mono" />
+                <button @click="copyDashboardLink" class="px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700">{{ linkCopied ? 'Copied' : 'Copy' }}</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Transactions -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 transition-all duration-200 p-6">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <h2 class="text-xl font-semibold text-slate-900">Recent Transactions</h2>
+                <p class="text-sm text-slate-600 mt-1">Transactions associated with your merchant account</p>
+              </div>
+              <router-link to="/transactions" class="text-sm text-indigo-700 hover:text-indigo-900">View all</router-link>
+            </div>
+
+            <div v-if="isLoadingTransactions" class="py-8 text-center text-slate-600">Loading transactions...</div>
+            <div v-else-if="transactionsError" class="py-3 text-sm text-red-700">{{ transactionsError }}</div>
+            <div v-else-if="dashboardTransactions.length === 0" class="py-6 text-sm text-slate-500">No transactions yet for this merchant.</div>
+
+            <div v-else class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="text-left text-xs uppercase tracking-wide text-slate-500 border-b border-slate-200">
+                    <th class="py-2 pr-4">Transaction</th>
+                    <th class="py-2 pr-4">Intent</th>
+                    <th class="py-2 pr-4">Amount</th>
+                    <th class="py-2 pr-4">Status</th>
+                    <th class="py-2">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="tx in dashboardTransactions" :key="tx.id" class="border-b border-slate-100 text-sm text-slate-700">
+                    <td class="py-3 pr-4 font-mono">{{ tx.id.slice(0, 8) }}...</td>
+                    <td class="py-3 pr-4 font-mono">{{ tx.paymentIntentId.slice(0, 8) }}...</td>
+                    <td class="py-3 pr-4 font-semibold text-slate-900">{{ tx.currency }} {{ Number(tx.amount).toFixed(2) }}</td>
+                    <td class="py-3 pr-4">
+                      <span
+                        :class="[
+                          'px-2 py-1 rounded-full text-xs font-semibold',
+                          tx.status === 'SUCCEEDED'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : tx.status === 'PENDING'
+                            ? 'bg-amber-100 text-amber-800'
+                            : tx.status === 'FAILED'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-slate-100 text-slate-700',
+                        ]"
+                      >
+                        {{ tx.status }}
+                      </span>
+                    </td>
+                    <td class="py-3">{{ new Date(tx.createdAt).toLocaleString() }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <!-- Configuration Cards -->
@@ -300,11 +433,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useMerchantStore } from '@/stores/merchant'
 import { useNotificationStore } from '@/stores/notifications'
 import AppLayout from '@/layouts/AppLayout.vue'
+import { createPaymentIntent, generateCheckoutLink } from '@/services/checkout'
+import { transactionService } from '@/services/transactions'
+import type { Transaction } from '@/types'
 import router from '@/router'
 
 const authStore = useAuthStore()
@@ -317,6 +453,22 @@ const statusChangeError = ref('')
 const statusChangeForm = ref({
   reason: '',
 })
+
+const creatingOrder = ref(false)
+const orderError = ref('')
+const linkCopied = ref(false)
+const createdOrderId = ref('')
+const orderForm = ref({
+  amount: 99.99,
+  currency: 'USD',
+  description: '',
+})
+
+const dashboardTransactions = ref<Transaction[]>([])
+const isLoadingTransactions = ref(false)
+const transactionsError = ref('')
+
+const createdOrderLink = computed(() => createdOrderId.value ? generateCheckoutLink(createdOrderId.value) : '')
 
 function openActivateDialog() {
   statusChangeForm.value.reason = ''
@@ -369,6 +521,62 @@ async function handleDeactivate() {
   }
 }
 
+async function createOrderFromDashboard() {
+  orderError.value = ''
+
+  if (!orderForm.value.amount || orderForm.value.amount < 0.01) {
+    orderError.value = 'Amount must be at least 0.01'
+    return
+  }
+
+  creatingOrder.value = true
+  try {
+    const intent = await createPaymentIntent({
+      amount: Number(orderForm.value.amount),
+      currency: orderForm.value.currency,
+      description: orderForm.value.description?.trim() || undefined,
+    })
+
+    createdOrderId.value = intent.id
+    notificationStore.success('Payment order created successfully')
+  } catch (error: any) {
+    orderError.value = error?.response?.data?.message || 'Could not create payment order'
+    notificationStore.error(orderError.value)
+  } finally {
+    creatingOrder.value = false
+  }
+}
+
+async function copyDashboardLink() {
+  if (!createdOrderLink.value) return
+  try {
+    await navigator.clipboard.writeText(createdOrderLink.value)
+    linkCopied.value = true
+    setTimeout(() => {
+      linkCopied.value = false
+    }, 1500)
+    notificationStore.success('Checkout link copied')
+  } catch {
+    notificationStore.error('Could not copy checkout link')
+  }
+}
+
+async function fetchDashboardTransactions() {
+  isLoadingTransactions.value = true
+  transactionsError.value = ''
+
+  try {
+    const response = await transactionService.list(1, 5)
+    dashboardTransactions.value = response.items
+  } catch (error: any) {
+    transactionsError.value = error?.response?.status === 403
+      ? 'You do not have permission to view transactions. Please verify merchant permissions.'
+      : 'Could not load transactions for your merchant account.'
+  } finally {
+    isLoadingTransactions.value = false
+  }
+}
+
 onMounted(async () => {
   await authStore.initializeSession()
   if (!authStore.user) {
@@ -379,6 +587,7 @@ onMounted(async () => {
   try {
     const merchantId = authStore.user.merchantId || authStore.user.id
     await merchantStore.fetchById(merchantId)
+    await fetchDashboardTransactions()
   } catch (_error) {
     notificationStore.error('Could not load merchant data')
   }

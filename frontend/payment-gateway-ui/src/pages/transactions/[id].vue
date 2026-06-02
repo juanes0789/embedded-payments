@@ -30,16 +30,16 @@
               <h1 class="text-3xl font-bold text-gray-900">Transaction Details</h1>
               <p class="text-gray-600 mt-2">ID: {{ transaction.id }}</p>
             </div>
-            <div
+             <div
               :class="[
                 'px-4 py-2 rounded-full font-semibold text-lg',
-                transaction.status === 'COMPLETED'
+                transaction.status === 'SUCCEEDED'
                   ? 'bg-green-100 text-green-800'
                   : transaction.status === 'PENDING'
                   ? 'bg-yellow-100 text-yellow-800'
-                  : transaction.status === 'REFUNDED'
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'bg-red-100 text-red-800',
+                  : transaction.status === 'FAILED'
+                  ? 'bg-red-100 text-red-800'
+                  : 'bg-gray-100 text-gray-800',
               ]"
             >
               {{ transaction.status }}
@@ -66,29 +66,29 @@
             <div>
               <p class="text-sm text-gray-600 mb-1">Last Updated</p>
               <p class="text-lg font-semibold text-gray-900">
-                {{ new Date(transaction.updatedAt).toLocaleDateString() }}
+                {{ transaction.updatedAt ? new Date(transaction.updatedAt).toLocaleDateString() : 'N/A' }}
               </p>
             </div>
           </div>
         </div>
 
-        <!-- Customer Information -->
+         <!-- Payment Information -->
         <div class="bg-white rounded-lg shadow p-6">
-          <h2 class="text-xl font-semibold text-gray-900 mb-4">Customer Information</h2>
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Payment Information</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <p class="text-sm text-gray-600 mb-1">Email</p>
-              <p class="text-lg text-gray-900">{{ transaction.customerEmail }}</p>
+              <p class="text-sm text-gray-600 mb-1">Payment Intent ID</p>
+              <p class="text-lg text-gray-900 font-mono">{{ transaction.paymentIntentId }}</p>
             </div>
-            <div v-if="transaction.customerName">
-              <p class="text-sm text-gray-600 mb-1">Name</p>
-              <p class="text-lg text-gray-900">{{ transaction.customerName }}</p>
+            <div v-if="transaction.paymentMethod">
+              <p class="text-sm text-gray-600 mb-1">Payment Method</p>
+              <p class="text-lg text-gray-900">{{ transaction.paymentMethod }}</p>
             </div>
           </div>
         </div>
 
-        <!-- Actions -->
-        <div v-if="transaction.status === 'COMPLETED'" class="bg-white rounded-lg shadow p-6">
+         <!-- Actions -->
+        <div v-if="transaction.status === 'SUCCEEDED'" class="bg-white rounded-lg shadow p-6">
           <h2 class="text-xl font-semibold text-gray-900 mb-4">Actions</h2>
           <button
             @click="openRefundDialog"

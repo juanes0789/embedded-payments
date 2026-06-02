@@ -24,15 +24,33 @@ public class GetCurrentMerchantUseCase {
     }
 
     public CurrentMerchantResponse execute(UUID currentUserId, String role, UUID merchantId) {
-        if ("ROLE_MERCHANT".equals(role)) {
-            UUID resolvedMerchantId = merchantId != null ? merchantId : currentUserId;
-            Merchant merchant = merchantRepository.findById(resolvedMerchantId)
-                    .orElseThrow(() -> new DomainException(
-                            HttpStatus.NOT_FOUND,
-                            "MERCHANT_NOT_FOUND",
-                            "Merchant not found",
-                            List.of("merchantId: " + resolvedMerchantId)
-                    ));
+        if ("ROLE_MERCHANT".equals(role) || "ROLE_USER".equals(role)) {
+            Merchant merchant = null;
+            UUID resolvedMerchantId = merchantId;
+
+            if (resolvedMerchantId != null) {
+                merchant = merchantRepository.findById(resolvedMerchantId).orElse(null);
+            }
+
+            if (merchant == null) {
+                UserAccount user = userAccountRepository.findById(currentUserId)
+                        .orElseThrow(() -> new DomainException(
+                                HttpStatus.NOT_FOUND,
+                                "USER_NOT_FOUND",
+                                "User not found",
+                                List.of("userId: " + currentUserId)
+                        ));
+
+                merchant = merchantRepository.findByEmail(user.getEmail())
+                        .orElseThrow(() -> new DomainException(
+                                HttpStatus.NOT_FOUND,
+                                "MERCHANT_NOT_FOUND",
+                                "Merchant not found for user",
+                                List.of("email: " + user.getEmail())
+                        ));
+                resolvedMerchantId = merchant.getId();
+            }
+
             return new CurrentMerchantResponse(
                     merchant.getId(),
                     merchant.getEmail(),

@@ -7,7 +7,6 @@ import com.paymentplatform.embeddedpayments.payment.domain.repository.PaymentRep
 import com.paymentplatform.embeddedpayments.shared.exception.DomainException;
 import com.paymentplatform.embeddedpayments.transaction.domain.entity.PaymentTransaction;
 import com.paymentplatform.embeddedpayments.transaction.domain.repository.TransactionRepository;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -103,4 +102,5 @@ public class AuthorizeTransactionUseCase {
         return transactionRepository.save(transaction);
     }
 }
+
 

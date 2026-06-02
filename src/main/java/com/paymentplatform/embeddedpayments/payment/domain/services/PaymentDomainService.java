@@ -11,6 +11,14 @@ import org.springframework.stereotype.Service;
 public class PaymentDomainService {
 
     public PaymentIntent createPaymentIntent(UUID merchantId, BigDecimal amount, String currency) {
+        return createPaymentIntent(merchantId, amount, currency, null);
+    }
+
+    public PaymentIntent createPaymentIntent(UUID merchantId, BigDecimal amount, String currency, String description) {
+        if (merchantId == null) {
+            throw new DomainException("merchantId is required");
+        }
+
         if (amount == null || amount.signum() <= 0) {
             throw new DomainException("amount must be greater than zero");
         }
@@ -22,9 +30,13 @@ public class PaymentDomainService {
         return new PaymentIntent(
                 UUID.randomUUID(),
                 merchantId,
+                null,
                 amount,
                 currency.toUpperCase(Locale.ROOT),
-                "CREATED"
+                "CREATED",
+                description,
+                java.time.Instant.now(),
+                java.time.Instant.now()
         );
     }
 }

@@ -4,7 +4,23 @@ import { useAuthStore } from '@/stores/auth'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/dashboard',
+    redirect: '/pay',
+  },
+  {
+    path: '/pay/:checkoutId?',
+    name: 'Checkout',
+    component: () => import('./pages/checkout.vue'),
+    meta: {
+      requiresAuth: false,
+    },
+  },
+  {
+    path: '/create-order',
+    name: 'CreateOrder',
+    component: () => import('./pages/create-order.vue'),
+    meta: {
+      requiresAuth: true,
+    },
   },
   {
     path: '/login',

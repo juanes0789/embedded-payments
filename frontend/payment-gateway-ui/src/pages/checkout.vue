@@ -1,6 +1,27 @@
 <template>
   <div class="checkout-shell">
     <div class="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
+      <!-- Loading state -->
+      <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
+        <div class="text-center">
+          <div class="animate-spin h-12 w-12 border-4 border-slate-200 border-t-slate-950 rounded-full mx-auto mb-4"></div>
+          <p class="text-slate-600">Loading payment details...</p>
+        </div>
+      </div>
+
+      <!-- Error state -->
+      <div v-else-if="!paymentIntent && errorMessage" class="flex items-center justify-center min-h-screen">
+        <div class="max-w-md mx-auto">
+          <div class="rounded-lg border border-rose-200 bg-rose-50 p-6 text-center">
+            <CircleCheckBig class="h-12 w-12 text-rose-600 mx-auto mb-4" :style="{transform: 'rotate(45deg)'}" />
+            <p class="text-rose-900 font-semibold mb-2">Error Loading Payment</p>
+            <p class="text-rose-800 text-sm">{{ errorMessage }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main checkout content -->
+      <template v-else-if="paymentIntent">
       <header class="mb-6 flex items-center justify-between rounded-3xl border border-white/10 bg-white/5 px-5 py-4 text-white shadow-[0_20px_60px_-30px_rgba(15,23,42,0.65)] backdrop-blur">
         <div class="flex items-center gap-4">
           <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-950 shadow-lg shadow-black/20">
@@ -26,7 +47,7 @@
 
       <main class="grid flex-1 gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <section class="flex flex-col gap-6 text-white">
-          <div class="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-[0_30px_90px_-40px_rgba(15,23,42,0.8)] backdrop-blur">
+          <div class="rounded-4xl border border-white/10 bg-white/5 p-6 shadow-[0_30px_90px_-40px_rgba(15,23,42,0.8)] backdrop-blur">
             <div class="mb-6 flex flex-wrap items-center gap-3">
               <span class="inline-flex items-center rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-200 ring-1 ring-inset ring-emerald-400/25">
                 <CircleCheckBig class="mr-2 h-4 w-4" />
@@ -52,7 +73,7 @@
               <article class="rounded-2xl border border-white/10 bg-white/8 p-4">
                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Merchant</p>
                 <p class="mt-2 text-sm font-semibold text-white">{{ merchantName }}</p>
-                <p class="mt-1 text-xs text-white/60">Trusted payment destination</p>
+                <p class="mt-1 text-xs text-white/60">{{ description }}</p>
               </article>
               <article class="rounded-2xl border border-white/10 bg-white/8 p-4">
                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Amount</p>
@@ -277,12 +298,13 @@
         <p>© {{ currentYear }} Embedded Payments. Built for a modern checkout experience.</p>
         <p>Secure by design · Responsive · Fast confirmation</p>
       </footer>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   CircleCheckBig,
@@ -291,16 +313,31 @@ import {
   ShieldCheck,
   Sparkles,
 } from 'lucide-vue-next'
+import { getPaymentIntent, submitCheckoutPayment, type PaymentIntent, type CheckoutSubmitResponse } from '@/services/checkout'
+import { useNotificationStore } from '@/stores/notifications'
 
 const route = useRoute()
+const notificationStore = useNotificationStore()
 
 const currentYear = new Date().getFullYear()
-const merchantName = computed(() => stringQuery('merchant', 'Nova Commerce'))
-const description = computed(() => stringQuery('description', 'One-time secure payment'))
-const sessionLabel = computed(() => route.params.checkoutId ? `Session ${String(route.params.checkoutId)}` : 'Guest checkout')
 
-const subtotal = computed(() => parseMoney(route.query.amount, 129.99))
-const currency = computed(() => stringQuery('currency', 'USD').toUpperCase())
+// Loading states
+const isLoading = ref(true)
+const isProcessing = ref(false)
+const paymentCompleted = ref(false)
+const errorMessage = ref('')
+
+// Payment intent data from backend
+const paymentIntent = ref<PaymentIntent | null>(null)
+const transactionData = ref<CheckoutSubmitResponse | null>(null)
+
+// Computed properties for display
+const merchantName = computed(() => paymentIntent.value?.merchantName || 'Merchant')
+const description = computed(() => paymentIntent.value?.description || 'One-time secure payment')
+const sessionLabel = computed(() => route.params.checkoutId ? `Order ${String(route.params.checkoutId).substring(0, 8)}...` : 'Checkout')
+
+const subtotal = computed(() => paymentIntent.value?.amount || 0)
+const currency = computed(() => paymentIntent.value?.currency?.toUpperCase() || 'USD')
 const processingFee = computed(() => subtotal.value * 0.029 + 0.3)
 const total = computed(() => subtotal.value + processingFee.value)
 
@@ -313,29 +350,16 @@ const form = reactive({
   cardNumber: '',
   expiry: '',
   cvc: '',
-  email: stringQuery('customer', ''),
+  email: '',
 })
 
-const isProcessing = ref(false)
-const paymentCompleted = ref(false)
-const errorMessage = ref('')
 const receipt = reactive({
   reference: '',
   last4: '4242',
   paidAt: '',
 })
 
-function stringQuery(key: string, fallback: string) {
-  const value = route.query[key]
-  return typeof value === 'string' && value.trim() ? value.trim() : fallback
-}
-
-function parseMoney(value: unknown, fallback: number) {
-  const raw = Array.isArray(value) ? value[0] : value
-  const parsed = typeof raw === 'string' ? Number(raw) : typeof raw === 'number' ? raw : Number.NaN
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
-}
-
+// Utility functions
 function formatMoney(amount: number, code: string) {
   try {
     return new Intl.NumberFormat('en-US', {
@@ -366,7 +390,7 @@ function handleExpiryInput(event: Event) {
 }
 
 function stepClass(step: number) {
-  const activeStep = paymentCompleted.value ? 3 : isProcessing.value ? 2 : 2
+  const activeStep = paymentCompleted.value ? 3 : isProcessing.value ? 2 : 1
   return [
     'rounded-full px-3 py-2 text-center transition',
     step === activeStep ? 'bg-slate-950 text-white shadow-sm' : 'bg-slate-100 text-slate-500',
@@ -382,24 +406,81 @@ function validateForm() {
   return ''
 }
 
+async function loadPaymentIntent() {
+  if (!route.params.checkoutId) {
+    errorMessage.value = 'No payment intent specified. Please use a valid checkout link.'
+    isLoading.value = false
+    return
+  }
+
+  try {
+    const intent = await getPaymentIntent(route.params.checkoutId as string)
+    paymentIntent.value = intent
+    notificationStore.success(`Payment intent loaded: ${formatMoney(intent.amount, intent.currency)}`)
+  } catch (error: any) {
+    const status = error.response?.status
+    if (status === 404) {
+      errorMessage.value = 'Payment intent not found. Please check the checkout link.'
+    } else if (status === 410) {
+      errorMessage.value = 'This payment intent is no longer available.'
+    } else {
+      errorMessage.value = 'Failed to load payment intent. Please try again.'
+    }
+    notificationStore.error(errorMessage.value)
+  } finally {
+    isLoading.value = false
+  }
+}
+
 async function submitPayment() {
   errorMessage.value = validateForm()
   if (errorMessage.value) return
+
+  if (!paymentIntent.value) {
+    errorMessage.value = 'Payment intent not loaded'
+    return
+  }
 
   isProcessing.value = true
   errorMessage.value = ''
 
   try {
-    await new Promise((resolve) => setTimeout(resolve, 1800))
-    paymentCompleted.value = true
-    receipt.reference = makeReference()
-    receipt.last4 = form.cardNumber.replace(/\s/g, '').slice(-4)
-    receipt.paidAt = new Intl.DateTimeFormat('en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(new Date())
-  } catch {
-    errorMessage.value = 'We could not complete the payment. Please try again.'
+    const response = await submitCheckoutPayment({
+      checkoutId: paymentIntent.value.id,
+      customerEmail: form.email,
+      customerName: form.cardholderName,
+    })
+
+    transactionData.value = response
+
+    if (response.status === 'SUCCEEDED') {
+      paymentCompleted.value = true
+      // Use backend-generated references instead of local mock references.
+      receipt.reference = response.processorReference || response.transactionId
+      receipt.last4 = form.cardNumber.replace(/\s/g, '').slice(-4)
+      receipt.paidAt = new Intl.DateTimeFormat('en-US', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(new Date())
+      notificationStore.success(`Payment successful! Transaction ID: ${response.transactionId}`)
+    } else {
+      errorMessage.value = 'Payment processing failed. Please try again.'
+      notificationStore.error(errorMessage.value)
+    }
+  } catch (error: any) {
+    const status = error.response?.status
+    const errorCode = error.response?.data?.error
+
+    if (status === 409) {
+      errorMessage.value = 'A transaction is already in progress for this intent.'
+    } else if (status === 422) {
+      errorMessage.value = 'This payment intent cannot be processed.'
+    } else if (status === 500) {
+      errorMessage.value = 'Payment processing error. Please try again.'
+    } else {
+      errorMessage.value = 'We could not complete the payment. Please try again.'
+    }
+    notificationStore.error(errorMessage.value)
   } finally {
     isProcessing.value = false
   }
@@ -412,12 +493,14 @@ function resetCheckout() {
   form.cardNumber = ''
   form.expiry = ''
   form.cvc = ''
-  form.email = stringQuery('customer', '')
+  form.email = ''
 }
 
-function makeReference() {
-  const random = Math.random().toString(36).slice(2, 10).toUpperCase()
-  return `EP-${random}`
-}
+// Load payment intent on component mount
+onMounted(() => {
+  loadPaymentIntent()
+})
 </script>
+
+
 

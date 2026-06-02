@@ -2,12 +2,19 @@ import instance from './api'
 
 export interface PaymentIntent {
   id: string
+  merchantName?: string
   amount: number
   currency: string
   status: string
   description?: string
   createdAt: string
   updatedAt: string
+}
+
+export interface CreatePaymentIntentRequest {
+  amount: number
+  currency: string
+  description?: string
 }
 
 export interface CheckoutSubmitRequest {
@@ -20,6 +27,15 @@ export interface CheckoutSubmitResponse {
   transactionId: string
   status: string
   processorReference?: string
+}
+
+/**
+ * Create a new payment intent from merchant dashboard (JWT)
+ * @param request - Payment intent creation data
+ */
+export async function createPaymentIntent(request: CreatePaymentIntentRequest): Promise<PaymentIntent> {
+  const response = await instance.post<PaymentIntent>('/api/v1/admin/payments/intents', request)
+  return response.data
 }
 
 /**
@@ -46,4 +62,12 @@ export async function submitCheckoutPayment(request: CheckoutSubmitRequest): Pro
 export function generateIdempotencyKey(): string {
   return `checkout_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
 }
+
+/**
+ * Generate a shareable checkout link for a payment intent
+ */
+export function generateCheckoutLink(intentId: string, baseUrl: string = window.location.origin): string {
+  return `${baseUrl}/pay/${intentId}`
+}
+
 

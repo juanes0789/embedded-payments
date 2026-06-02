@@ -1,6 +1,8 @@
 package com.paymentplatform.embeddedpayments.shared.security;
 
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -8,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AuthenticationService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
 
     /**
      * Obtiene el usuario autenticado actual
@@ -26,9 +30,25 @@ public class AuthenticationService {
     public String getCurrentUserRole() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
-            for (GrantedAuthority authority : authentication.getAuthorities()) {
-                return authority.getAuthority();
+            // Priorizar roles conocidos para evitar devolver una autoridad incorrecta
+            if (authentication.getAuthorities().stream().anyMatch(auth -> "ROLE_ADMIN".equals(auth.getAuthority()))) {
+                return "ROLE_ADMIN";
             }
+            if (authentication.getAuthorities().stream().anyMatch(auth -> "ROLE_MERCHANT".equals(auth.getAuthority()))) {
+                return "ROLE_MERCHANT";
+            }
+            if (authentication.getAuthorities().stream().anyMatch(auth -> "ROLE_USER".equals(auth.getAuthority()))) {
+                return "ROLE_USER";
+            }
+
+            // Si no es ninguno de los anteriores, devolver la primera autoridad disponible
+            String role = authentication.getAuthorities().stream()
+                    .findFirst()
+                    .map(GrantedAuthority::getAuthority)
+                    .orElse(null);
+            log.debug("getCurrentUserRole -> principal={} authorities={} resolvedRole={}",
+                    authentication.getName(), authentication.getAuthorities(), role);
+            return role;
         }
         return null;
     }
@@ -67,6 +87,7 @@ public class AuthenticationService {
             java.util.Map<String, Object> details = (java.util.Map<String, Object>) authentication.getDetails();
             Object merchantId = details.get("merchantId");
             if (merchantId != null) {
+                log.debug("getMerchantId -> found in details: {} principal={}", merchantId, authentication.getName());
                 return merchantId.toString();
             }
         }
@@ -74,6 +95,7 @@ public class AuthenticationService {
         if (authentication != null
                 && authentication.isAuthenticated()
                 && authentication.getAuthorities().stream().anyMatch(auth -> "ROLE_MERCHANT".equals(auth.getAuthority()))) {
+            log.debug("getMerchantId -> no details; using principal as merchant id: {}", authentication.getName());
             return authentication.getName();
         }
 
@@ -105,6 +127,7 @@ public class AuthenticationService {
         try {
             return UUID.fromString(principal);
         } catch (IllegalArgumentException ex) {
+            log.debug("getCurrentUserId -> principal is not a UUID: {}", principal);
             return null;
         }
     }
