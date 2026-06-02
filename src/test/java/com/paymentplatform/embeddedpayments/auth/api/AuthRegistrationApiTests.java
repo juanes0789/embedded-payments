@@ -1,5 +1,7 @@
 package com.paymentplatform.embeddedpayments.auth.api;
 
+import com.paymentplatform.embeddedpayments.merchant.domain.repository.MerchantRepository;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,6 +25,9 @@ class AuthRegistrationApiTests {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private MerchantRepository merchantRepository;
 
     @Test
     void shouldRegisterAdminUserAndAuthenticate() throws Exception {
@@ -70,6 +75,35 @@ class AuthRegistrationApiTests {
     }
 
     @Test
+    void shouldRegisterMerchantAndEnableOperationsImmediately() throws Exception {
+        String registerPayload = """
+                {
+                  "email":"merchant+flow@test.com",
+                  "password":"Passw0rd!",
+                  "role":"MERCHANT",
+                  "merchantName":"Flow Commerce",
+                  "contactName":"Ana Pérez",
+                  "contactEmail":"ana@flowcommerce.com"
+                }
+                """;
+
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerPayload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.email").value("merchant+flow@test.com"))
+                .andExpect(jsonPath("$.role").value("ROLE_MERCHANT"))
+                .andExpect(jsonPath("$.merchantId").isNotEmpty())
+                .andExpect(jsonPath("$.apiKey").isNotEmpty())
+                .andExpect(jsonPath("$.merchantStatus").value("ACTIVE"))
+                .andReturn();
+
+        UUID merchantId = extractMerchantId(result.getResponse().getContentAsString());
+        assertThat(merchantRepository.findById(merchantId)).isPresent();
+        assertThat(merchantRepository.findById(merchantId).orElseThrow().getStatus()).isEqualTo("ACTIVE");
+    }
+
+    @Test
     void shouldRegisterNaturalUserWithoutMerchant() throws Exception {
         String registerPayload = """
                 {
@@ -98,5 +132,15 @@ class AuthRegistrationApiTests {
         int end = responseBody.indexOf('"', from);
         assertThat(end).isGreaterThan(from);
         return responseBody.substring(from, end);
+    }
+
+    private UUID extractMerchantId(String responseBody) {
+        String prefix = "\"merchantId\":\"";
+        int start = responseBody.indexOf(prefix);
+        assertThat(start).isGreaterThanOrEqualTo(0);
+        int from = start + prefix.length();
+        int end = responseBody.indexOf('"', from);
+        assertThat(end).isGreaterThan(from);
+        return UUID.fromString(responseBody.substring(from, end));
     }
 }

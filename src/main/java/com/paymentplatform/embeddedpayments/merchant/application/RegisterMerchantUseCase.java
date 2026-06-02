@@ -8,6 +8,7 @@ import com.paymentplatform.embeddedpayments.shared.audit.AuditEventService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class RegisterMerchantUseCase {
@@ -27,10 +28,30 @@ public class RegisterMerchantUseCase {
         this.generateMerchantApiKeyUseCase = generateMerchantApiKeyUseCase;
     }
 
+    @Transactional
     public RegisteredMerchant execute(String name, String email) {
+        return executeInternal(name, email, null, null, false);
+    }
+
+    @Transactional
+    public RegisteredMerchant execute(String name, String email, String contactName, String contactEmail, boolean activateOnRegistration) {
+        return executeInternal(name, email, contactName, contactEmail, activateOnRegistration);
+    }
+
+    private RegisteredMerchant executeInternal(String name, String email, String contactName, String contactEmail, boolean activateOnRegistration) {
         Merchant merchant = merchantDomainService.buildNewMerchant(name, email);
         Merchant savedMerchant = merchantRepository.save(merchant);
         String apiKey = generateMerchantApiKeyUseCase.execute(savedMerchant.getId());
+
+        if (contactName != null || contactEmail != null) {
+            savedMerchant.updateContact(contactName, contactEmail);
+        }
+
+        if (activateOnRegistration && savedMerchant.isInactive()) {
+            savedMerchant.changeStatus("ACTIVE");
+        }
+
+        savedMerchant = merchantRepository.save(savedMerchant);
 
         String origin = resolveOrigin();
         String actor = resolveActor();

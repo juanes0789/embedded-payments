@@ -63,7 +63,9 @@ public class AuthController {
                 request.email(),
                 request.password(),
                 request.role(),
-                request.merchantName()
+                request.merchantName(),
+                request.contactName(),
+                request.contactEmail()
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new RegisterResponse(
@@ -72,7 +74,8 @@ public class AuthController {
                         registeredUser.status(),
                         registeredUser.role(),
                         registeredUser.merchantId(),
-                        registeredUser.apiKey()
+                        registeredUser.apiKey(),
+                        registeredUser.merchantStatus()
                 ));
     }
 
@@ -135,7 +138,9 @@ public class AuthController {
             @NotBlank(message = "Password is required")
             String password,
             String role,
-            String merchantName) {
+            String merchantName,
+            String contactName,
+            String contactEmail) {
     }
 
     public record RefreshRequest(
@@ -149,7 +154,7 @@ public class AuthController {
     public record TokenResponse(String token, Instant expiresAt) {
     }
 
-    public record RegisterResponse(UUID id, String email, String status, String role, UUID merchantId, String apiKey) {
+    public record RegisterResponse(UUID id, String email, String status, String role, UUID merchantId, String apiKey, String merchantStatus) {
     }
 
     public record CurrentUserResponse(UUID id, String email, String status, String role, UUID merchantId) {

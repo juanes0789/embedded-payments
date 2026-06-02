@@ -34,6 +34,19 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function register(payload: { email: string; password: string; role?: 'ADMIN' | 'MERCHANT' | 'USER'; merchantName?: string; contactName?: string; contactEmail?: string }) {
+    isLoading.value = true
+    error.value = null
+    try {
+      return await authService.register(payload)
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Registration failed'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   async function initializeSession() {
     if (isInitialized.value) {
       return
@@ -80,5 +93,6 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     initializeSession,
     logout,
+    register,
   }
 })

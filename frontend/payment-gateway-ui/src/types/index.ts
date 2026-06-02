@@ -33,6 +33,25 @@ export interface LoginResponse {
   expiresAt: string;
 }
 
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  role?: 'ADMIN' | 'MERCHANT' | 'USER';
+  merchantName?: string;
+  contactName?: string;
+  contactEmail?: string;
+}
+
+export interface RegisterResponse {
+  id: string;
+  email: string;
+  status: string;
+  role: string;
+  merchantId?: string | null;
+  apiKey?: string | null;
+  merchantStatus?: string | null;
+}
+
 // Merchant Types
 export interface Merchant {
   id: string;

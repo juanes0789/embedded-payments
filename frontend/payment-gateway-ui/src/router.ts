@@ -39,6 +39,14 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/pages/register.vue'),
+    meta: {
+      requiresAuth: false,
+    },
+  },
+  {
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('@/pages/dashboard.vue'),
@@ -64,6 +72,11 @@ const routes: RouteRecordRaw[] = [
         name: 'BankSettings',
         component: () => import('@/pages/settings/bank.vue'),
       },
+        {
+          path: 'balances',
+          name: 'BalancesSettings',
+          component: () => import('@/pages/settings/balances.vue'),
+        },
       {
         path: 'profile',
         name: 'ProfileSettings',

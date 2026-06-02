@@ -1,0 +1,2 @@
+import{i as a}from"./index-405b6034.js";const t={list:async(t=1,s=10,n)=>{const i={page:t,pageSize:s};n&&"ALL"!==n&&(i.status=n);return(await a.get("/api/v1/transactions",{params:i})).data},getById:async t=>(await a.get(`/api/v1/transactions/${t}`)).data,refund:async(t,s,n)=>(await a.post("/api/v1/refunds",{transactionId:t,amount:s,reason:n})).data};export{t};
+//# sourceMappingURL=transactions-150489b6.js.map

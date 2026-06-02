@@ -74,9 +74,8 @@
         <!-- Footer -->
         <div class="mt-6 pt-6 border-t border-slate-200">
           <p class="text-center text-sm text-slate-600">
-            Demo credentials:
-            <br />
-            <span class="font-medium text-slate-900">test@example.com / password</span>
+            ¿No tienes un comercio?
+            <router-link to="/register" class="text-slate-900 font-medium hover:underline">Regístralo aquí</router-link>
           </p>
         </div>
       </div>

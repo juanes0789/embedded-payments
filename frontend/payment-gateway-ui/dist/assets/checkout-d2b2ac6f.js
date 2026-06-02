@@ -1,0 +1,2 @@
+import{i as t}from"./index-405b6034.js";async function a(a){return(await t.post("/api/v1/admin/payments/intents",a)).data}async function n(a){return(await t.get(`/checkout/intents/${a}`)).data}async function i(a){return(await t.post("/checkout/submit",a)).data}function s(t,a=window.location.origin){return`${a}/pay/${t}`}export{s as a,a as c,n as g,i as s};
+//# sourceMappingURL=checkout-d2b2ac6f.js.map
