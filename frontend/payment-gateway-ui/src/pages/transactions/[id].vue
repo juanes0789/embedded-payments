@@ -66,7 +66,7 @@
             <div>
               <p class="text-sm text-gray-600 mb-1">Last Updated</p>
               <p class="text-lg font-semibold text-gray-900">
-                {{ new Date(transaction.updatedAt).toLocaleDateString() }}
+                {{ transaction.updatedAt ? new Date(transaction.updatedAt).toLocaleDateString() : 'N/A' }}
               </p>
             </div>
           </div>
