@@ -1,0 +1,56 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vue",
+  "regions": ["sfo1"],
+  "functions": {
+    "api/**: {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://embedded-payments-1.onrender.com/api/:path*"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/api/v1/:path*",
+      "destination": "https://embedded-payments-1.onrender.com/api/v1/:path*",
+      "permanent": true
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/:path*",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "VITE_API_URL": "https://embedded-payments-1.onrender.com",
+    "VITE_FALLBACK_API_URL": "https://embedded-payments-1.onrender.com",
+    "VITE_APP_NAME": "Payment Gateway",
+    "VITE_LOG_LEVEL": "error"
+  },
+  "public": true
+}
+
