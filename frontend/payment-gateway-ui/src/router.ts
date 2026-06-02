@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/pay',
+    redirect: '/login',
   },
   {
     path: '/pay/:checkoutId?',
