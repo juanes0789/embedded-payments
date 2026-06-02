@@ -38,6 +38,7 @@ public class TransactionDomainService {
                 currency != null ? currency : "USD",
                 validStatus,
                 Instant.now(),
+                Instant.now(),
                 reasonCode
         );
     }
