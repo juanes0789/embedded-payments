@@ -63,7 +63,8 @@
                   {{ transaction.id.substring(0, 8) }}...
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-900">
-                  {{ transaction.customerEmail }}
+                  <div class="font-medium">{{ transaction.customerName || 'N/A' }}</div>
+                  <div class="text-xs text-gray-500">{{ transaction.customerEmail || 'N/A' }}</div>
                 </td>
                 <td class="px-6 py-4 text-sm font-semibold text-gray-900">
                   {{ transaction.currency }} {{ transaction.amount.toFixed(2) }}

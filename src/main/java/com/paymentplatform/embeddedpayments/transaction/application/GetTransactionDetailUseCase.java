@@ -1,5 +1,7 @@
 package com.paymentplatform.embeddedpayments.transaction.application;
 
+import com.paymentplatform.embeddedpayments.customer.domain.entity.Customer;
+import com.paymentplatform.embeddedpayments.customer.domain.repository.CustomerRepository;
 import com.paymentplatform.embeddedpayments.payment.domain.entity.PaymentIntent;
 import com.paymentplatform.embeddedpayments.payment.domain.repository.PaymentRepository;
 import com.paymentplatform.embeddedpayments.shared.exception.DomainException;
@@ -20,13 +22,16 @@ public class GetTransactionDetailUseCase {
     private final TransactionRepository transactionRepository;
     private final PaymentRepository paymentRepository;
     private final TransactionStatusHistoryRepository transactionStatusHistoryRepository;
+    private final CustomerRepository customerRepository;
 
     public GetTransactionDetailUseCase(TransactionRepository transactionRepository,
                                        PaymentRepository paymentRepository,
-                                       TransactionStatusHistoryRepository transactionStatusHistoryRepository) {
+                                       TransactionStatusHistoryRepository transactionStatusHistoryRepository,
+                                       CustomerRepository customerRepository) {
         this.transactionRepository = transactionRepository;
         this.paymentRepository = paymentRepository;
         this.transactionStatusHistoryRepository = transactionStatusHistoryRepository;
+        this.customerRepository = customerRepository;
     }
 
     public TransactionDetailDto execute(UUID merchantId, UUID transactionId) {
@@ -69,6 +74,8 @@ public class GetTransactionDetailUseCase {
                 ))
                 .toList();
 
+        Customer customer = resolveCustomer(transaction, intent);
+
         return new TransactionDetailDto(
                 transaction.getId(),
                 merchantId,
@@ -76,12 +83,22 @@ public class GetTransactionDetailUseCase {
                 transaction.getCurrency() != null ? transaction.getCurrency() : "USD",
                 transaction.getStatus().equalsIgnoreCase("SUCCEEDED") ? "COMPLETED" : transaction.getStatus(),
                 transaction.getReasonCode(),
-                "customer@example.com", // Por defecto
-                "John Doe", // Por defecto
+                customer != null ? customer.getEmail() : null,
+                customer != null ? customer.getName() : null,
                 transaction.getCreatedAt(),
                 transaction.getCreatedAt(), // updatedAt
                 statusHistory
         );
+    }
+
+    private Customer resolveCustomer(PaymentTransaction transaction, PaymentIntent intent) {
+        UUID customerId = transaction.getCustomerId() != null ? transaction.getCustomerId() : intent.getCustomerId();
+        if (customerId == null) {
+            return null;
+        }
+
+        return customerRepository.findById(customerId)
+                .orElse(null);
     }
 
     public record TransactionDetailDto(

@@ -94,11 +94,11 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <p class="text-sm text-gray-600 mb-1">Email</p>
-              <p class="text-lg text-gray-900">{{ transaction.customerEmail }}</p>
+              <p class="text-lg text-gray-900">{{ transaction.customerEmail || 'N/A' }}</p>
             </div>
-            <div v-if="transaction.customerName">
+            <div>
               <p class="text-sm text-gray-600 mb-1">Name</p>
-              <p class="text-lg text-gray-900">{{ transaction.customerName }}</p>
+              <p class="text-lg text-gray-900">{{ transaction.customerName || 'N/A' }}</p>
             </div>
           </div>
         </div>
