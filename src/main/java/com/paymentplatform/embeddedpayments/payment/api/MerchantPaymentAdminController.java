@@ -3,7 +3,11 @@ package com.paymentplatform.embeddedpayments.payment.api;
 import com.paymentplatform.embeddedpayments.payment.application.CancelPaymentIntentUseCase;
 import com.paymentplatform.embeddedpayments.payment.application.CreatePaymentIntentUseCase;
 import com.paymentplatform.embeddedpayments.shared.security.AuthenticationService;
+import com.paymentplatform.embeddedpayments.transaction.domain.repository.TransactionRepository;
+import java.util.stream.Collectors;
 import com.paymentplatform.embeddedpayments.refund.application.CreateRefundUseCase;
+import com.paymentplatform.embeddedpayments.payment.domain.repository.PaymentRepository;
+import org.springframework.web.bind.annotation.GetMapping;
 import com.paymentplatform.embeddedpayments.transaction.application.AuthorizeTransactionUseCase;
 import com.paymentplatform.embeddedpayments.transaction.application.UpdateTransactionStatusUseCase;
 import com.paymentplatform.embeddedpayments.transaction.domain.entity.PaymentTransaction;
@@ -36,19 +40,25 @@ public class MerchantPaymentAdminController {
     private final AuthorizeTransactionUseCase authorizeTransactionUseCase;
     private final UpdateTransactionStatusUseCase updateTransactionStatusUseCase;
     private final CreateRefundUseCase createRefundUseCase;
+    private final TransactionRepository transactionRepository;
+    private final PaymentRepository paymentRepository;
 
     public MerchantPaymentAdminController(AuthenticationService authenticationService,
                                           CreatePaymentIntentUseCase createPaymentIntentUseCase,
                                           CancelPaymentIntentUseCase cancelPaymentIntentUseCase,
                                           AuthorizeTransactionUseCase authorizeTransactionUseCase,
                                           UpdateTransactionStatusUseCase updateTransactionStatusUseCase,
-                                          CreateRefundUseCase createRefundUseCase) {
+                                          CreateRefundUseCase createRefundUseCase,
+                                          TransactionRepository transactionRepository,
+                                          PaymentRepository paymentRepository) {
         this.authenticationService = authenticationService;
         this.createPaymentIntentUseCase = createPaymentIntentUseCase;
         this.cancelPaymentIntentUseCase = cancelPaymentIntentUseCase;
         this.authorizeTransactionUseCase = authorizeTransactionUseCase;
         this.updateTransactionStatusUseCase = updateTransactionStatusUseCase;
         this.createRefundUseCase = createRefundUseCase;
+        this.transactionRepository = transactionRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     @PostMapping("/intents")
@@ -61,6 +71,17 @@ public class MerchantPaymentAdminController {
                 request.description()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(intent));
+    }
+
+    @GetMapping("/intents")
+    public ResponseEntity<List<PaymentIntentResponse>> listIntents() {
+        UUID merchantId = resolveMerchantId();
+        List<PaymentIntent> intents = paymentRepository.findAll().stream()
+                .filter(i -> i.getMerchantId() != null && i.getMerchantId().equals(merchantId))
+                .collect(Collectors.toList());
+
+        List<PaymentIntentResponse> resp = intents.stream().map(this::toResponse).collect(Collectors.toList());
+        return ResponseEntity.ok(resp);
     }
 
     @PatchMapping("/intents/{id}/cancel")
@@ -107,6 +128,11 @@ public class MerchantPaymentAdminController {
     }
 
     private PaymentIntentResponse toResponse(PaymentIntent intent) {
+        // try to resolve a transaction that was created from this intent
+        UUID transactionId = transactionRepository.findByPaymentIntentId(intent.getId())
+                .map(PaymentTransaction::getId)
+                .orElse(null);
+
         return new PaymentIntentResponse(
                 intent.getId(),
                 intent.getMerchantId(),
@@ -115,7 +141,8 @@ public class MerchantPaymentAdminController {
                 intent.getStatus(),
                 intent.getDescription(),
                 intent.getCreatedAt(),
-                intent.getUpdatedAt()
+                intent.getUpdatedAt(),
+                transactionId
         );
     }
 
@@ -164,7 +191,8 @@ public class MerchantPaymentAdminController {
                                         String status,
                                         String description,
                                         Instant createdAt,
-                                        Instant updatedAt) {
+                                        Instant updatedAt,
+                                        UUID transactionId) {
     }
 
     public record TransactionResponse(UUID id,
